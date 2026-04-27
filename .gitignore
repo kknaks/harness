@@ -1,0 +1,6 @@
+# Personal Claude Code settings (per-user)
+.claude/settings.local.json
+
+# Obsidian per-user workspace state
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
