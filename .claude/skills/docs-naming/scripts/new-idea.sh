@@ -35,6 +35,7 @@ cat > "$OUT" <<EOF
 ---
 id: idea-$NN
 type: idea
+status: open
 created: $TODAY
 tags: [idea]
 ---

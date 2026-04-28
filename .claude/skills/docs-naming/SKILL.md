@@ -38,6 +38,7 @@ description: docs/ 하위 문서의 파일명 + 프론트매터 규칙. idea 새
 | 필드 | 비고 |
 |------|------|
 | `created` | `YYYY-MM-DD` (권장) |
+| `status` | `open` (default) / `absorbed` / `archived` / `superseded` — 흡수 시 `absorbed` 갱신 |
 | `tags` | 최소 `[idea]` (권장) |
 | `related_to` | 위키링크 리스트 — 양방향 소프트 링크 |
 | `supersedes` | 위키링크 리스트 — 이 idea 가 대체하는 다른 idea/spec |
@@ -45,18 +46,18 @@ description: docs/ 하위 문서의 파일명 + 프론트매터 규칙. idea 새
 
 ### spec (필수 필드 9개)
 
-`promote-idea-to-spec/SKILL.md` 참고. 추가로 `related_to`/`supersedes`/`depends_on` 선택.
+`promote-docs/SKILL.md` 참고. 추가로 `related_to`/`supersedes`/`depends_on` 선택.
 
 ## Scripts
 
 - `scripts/new-idea.sh "<title>"` — 다음 NN 산정 + 프론트매터 포함 idea 파일 생성.
 
-spec 파일 생성은 `promote-idea-to-spec` 스킬 사용.
+spec 파일 생성은 `promote-docs` 스킬 사용.
 
 ## Examples
 
 - `examples/idea-02-cli-shape.md` — 관계 선언이 있는 idea
-- `../promote-idea-to-spec/examples/spec-01-cli-shape.md` — 관계 선언이 있는 spec
+- `../promote-docs/examples/spec-01-cli-shape.md` — 관계 선언이 있는 spec
 
 ## How to apply
 

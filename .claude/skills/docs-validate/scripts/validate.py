@@ -10,7 +10,9 @@ Each doc declares typed relationships:
 Required frontmatter:
   - idea: id, type
   - spec: id, title, type, status, created, updated, sources, owns, tags
+  - adr:  id, title, type, status, date, sources, tags
 
+sources kind: spec.sources -> idea-*, adr.sources -> spec-*.
 All relationship link targets must resolve to an existing doc.
 supersedes and depends_on must be acyclic.
 
@@ -24,8 +26,20 @@ from pathlib import Path
 SPEC_REQUIRED = ["id", "title", "type", "status", "created",
                  "updated", "sources", "owns", "tags"]
 IDEA_REQUIRED = ["id", "type"]
+ADR_REQUIRED = ["id", "title", "type", "status", "date", "sources", "tags"]
 REL_FIELDS = ["related_to", "supersedes", "depends_on"]
 LINK_FIELDS = ["sources"] + REL_FIELDS
+BODY_LENGTH_LIMIT = 5000
+
+# adr.sources -> spec, spec.sources -> idea
+SOURCE_PREFIX = {"spec": "idea-", "adr": "spec-"}
+
+# status enum per kind. idea status is optional (default: open). spec/adr required.
+STATUS_ALLOWED = {
+    "idea": ["open", "absorbed", "archived", "superseded"],
+    "spec": ["draft", "active", "decided", "deprecated"],
+    "adr": ["proposed", "accepted", "superseded", "deprecated"],
+}
 
 
 def parse_frontmatter(text):
@@ -64,13 +78,14 @@ def parse_frontmatter(text):
     return fm
 
 
-def collect_docs(spec_dir, idea_dir):
+def collect_docs(spec_dir, idea_dir, adr_dir):
     """Return {stem: (kind, path, fm)} and accumulated violations."""
     docs = {}
     violations = []
     for kind, d, required in (
         ("spec", spec_dir, SPEC_REQUIRED),
         ("idea", idea_dir, IDEA_REQUIRED),
+        ("adr", adr_dir, ADR_REQUIRED),
     ):
         if not d.exists():
             continue
@@ -113,20 +128,22 @@ def check_uniqueness(docs):
 
 
 def check_sources_required(docs):
-    """spec.sources non-empty list of wikilinks pointing at idea-* docs."""
+    """spec.sources -> idea-*, adr.sources -> spec-*. Both non-empty."""
     out = []
     for stem, (kind, _, fm) in docs.items():
-        if kind != "spec":
+        if kind not in SOURCE_PREFIX:
             continue
         srcs = fm.get("sources")
         if not isinstance(srcs, list) or not srcs:
             out.append(f"[no-sources] {stem}: sources must be a non-empty list")
             continue
+        expected = SOURCE_PREFIX[kind]
         for s in srcs:
             m = re.match(r"\[\[([^\]]+)\]\]", str(s))
-            if m and not m.group(1).startswith("idea-"):
+            if m and not m.group(1).startswith(expected):
                 out.append(
-                    f"[bad-source-kind] {stem}: source must be an idea, got {m.group(1)}"
+                    f"[bad-source-kind] {stem}: source must start with "
+                    f"{expected!r}, got {m.group(1)}"
                 )
     return out
 
@@ -150,6 +167,59 @@ def check_links(docs):
                 elif target not in docs:
                     out.append(f"[missing-target] {stem}.{field} -> {target}")
     return out
+
+
+def extract_scope(path):
+    """Pull first non-empty paragraph after `## Scope` heading. Returns '' if absent."""
+    text = path.read_text()
+    m = re.search(r"(?m)^##\s+Scope\s*\n+(.+?)(?=\n##\s|\Z)", text, re.S)
+    if not m:
+        return ""
+    para = m.group(1).strip()
+    # collapse whitespace, take first non-empty line
+    for line in para.splitlines():
+        s = line.strip()
+        if s and not s.startswith("<!--"):
+            return s
+    return ""
+
+
+def check_status_enum(docs):
+    """Validate status field if present. Missing on spec/adr caught elsewhere."""
+    out = []
+    for stem, (kind, _, fm) in docs.items():
+        status = fm.get("status")
+        if status is None:
+            continue
+        allowed = STATUS_ALLOWED.get(kind, [])
+        if status not in allowed:
+            out.append(
+                f"[bad-status] {stem}: status={status!r} not in {allowed}"
+            )
+    return out
+
+
+def check_body_length(docs):
+    """Warn (not violate) when idea/spec body exceeds BODY_LENGTH_LIMIT chars.
+
+    Body = file text minus frontmatter, stripped. Single-byte and multi-byte
+    chars count equally (Python len on str).
+    """
+    warnings = []
+    for stem, (kind, path, _) in docs.items():
+        text = path.read_text()
+        if text.startswith("---\n"):
+            end = text.find("\n---", 4)
+            body = text[end + 4:] if end >= 0 else text
+        else:
+            body = text
+        n = len(body.strip())
+        if n > BODY_LENGTH_LIMIT:
+            warnings.append(
+                f"[long-body] docs/{kind}/{path.name}: {n} chars "
+                f"(limit {BODY_LENGTH_LIMIT})"
+            )
+    return warnings
 
 
 def check_acyclic(docs, field):
@@ -195,7 +265,7 @@ def check_acyclic(docs, field):
 def link_md(stem, docs):
     if stem not in docs:
         return f"`{stem}` (missing)"
-    sub = "spec" if docs[stem][0] == "spec" else "idea"
+    sub = docs[stem][0]  # spec / idea / adr — directory matches kind
     return f"[{stem}]({sub}/{stem}.md)"
 
 
@@ -203,7 +273,9 @@ def regenerate_map(root, docs):
     map_path = root / "docs" / "_map.md"
     specs = {s: fm for s, (k, _, fm) in docs.items() if k == "spec"}
     ideas = {s: fm for s, (k, _, fm) in docs.items() if k == "idea"}
+    adrs = {s: fm for s, (k, _, fm) in docs.items() if k == "adr"}
 
+    # idea -> [spec] inverse
     inverse = {}
     spec_rows = []
     for stem, fm in sorted(specs.items(), key=lambda kv: kv[1].get("owns", "")):
@@ -214,9 +286,13 @@ def regenerate_map(root, docs):
                 idea_stems.append(m.group(1))
                 inverse.setdefault(m.group(1), []).append(stem)
         sources_md = ", ".join(f"[{i}](idea/{i}.md)" for i in idea_stems) or "?"
+        spec_path = next(p for s, (k, p, _) in docs.items() if s == stem)
+        scope = extract_scope(spec_path) or "_(미작성)_"
+        # escape pipe in scope to keep table valid
+        scope_md = scope.replace("|", "\\|")
         spec_rows.append(
             f"| {fm.get('owns','?')} | {fm.get('status','?')} | "
-            f"[{stem}](spec/{stem}.md) | {sources_md} |"
+            f"[{stem}](spec/{stem}.md) | {sources_md} | {scope_md} |"
         )
 
     idea_rows = []
@@ -228,7 +304,26 @@ def regenerate_map(root, docs):
             used_by_md = ", ".join(f"[{s}](spec/{s}.md)" for s in used_by)
             if len(used_by) > 1:
                 used_by_md += "  ⚠ multi-spec"
-        idea_rows.append(f"| [{stem}](idea/{stem}.md) | {used_by_md} |")
+        status = ideas[stem].get("status", "open")
+        idea_rows.append(
+            f"| [{stem}](idea/{stem}.md) | {status} | {used_by_md} |"
+        )
+
+    # spec -> [adr] inverse
+    spec_inverse = {}
+    adr_rows = []
+    for stem, fm in sorted(adrs.items()):
+        spec_stems = []
+        for src in fm.get("sources", []):
+            m = re.match(r"\[\[([^\]]+)\]\]", str(src))
+            if m:
+                spec_stems.append(m.group(1))
+                spec_inverse.setdefault(m.group(1), []).append(stem)
+        sources_md = ", ".join(f"[{s}](spec/{s}.md)" for s in spec_stems) or "?"
+        adr_rows.append(
+            f"| {fm.get('status','?')} | {fm.get('date','?')} | "
+            f"[{stem}](adr/{stem}.md) | {sources_md} |"
+        )
 
     n_unpromoted = sum(1 for s in ideas if s not in inverse)
 
@@ -251,7 +346,8 @@ def regenerate_map(root, docs):
         "",
         "> 자동 생성. 수동 편집 금지. 재생성: `.claude/skills/docs-validate/scripts/validate.sh` (또는 docs/ 편집 시 자동 훅).",
         "",
-        f"_{len(specs)} spec(s), {len(ideas)} idea(s), {n_unpromoted} unpromoted_",
+        f"_{len(specs)} spec(s), {len(ideas)} idea(s), {len(adrs)} adr(s), "
+        f"{n_unpromoted} unpromoted_",
         "",
         "## Relations",
         "",
@@ -279,8 +375,8 @@ def regenerate_map(root, docs):
     lines += ["", "## Specs", ""]
     if spec_rows:
         lines += [
-            "| Topic | Status | Spec | Sources |",
-            "|-------|--------|------|---------|",
+            "| Topic | Status | Spec | Sources | Scope |",
+            "|-------|--------|------|---------|-------|",
         ] + spec_rows
     else:
         lines.append("_(없음)_")
@@ -288,9 +384,18 @@ def regenerate_map(root, docs):
     lines += ["", "## Ideas (lineage view)", ""]
     if idea_rows:
         lines += [
-            "| File | Absorbed into |",
-            "|------|---------------|",
+            "| File | Status | Absorbed into |",
+            "|------|--------|---------------|",
         ] + idea_rows
+    else:
+        lines.append("_(없음)_")
+
+    lines += ["", "## ADRs", ""]
+    if adr_rows:
+        lines += [
+            "| Status | Date | ADR | Source spec |",
+            "|--------|------|-----|-------------|",
+        ] + adr_rows
     else:
         lines.append("_(없음)_")
     lines.append("")
@@ -301,12 +406,15 @@ def main(root):
     root = Path(root)
     spec_dir = root / "docs" / "spec"
     idea_dir = root / "docs" / "idea"
-    docs, violations = collect_docs(spec_dir, idea_dir)
+    adr_dir = root / "docs" / "adr"
+    docs, violations = collect_docs(spec_dir, idea_dir, adr_dir)
     violations += check_uniqueness(docs)
     violations += check_sources_required(docs)
     violations += check_links(docs)
     violations += check_acyclic(docs, "supersedes")
     violations += check_acyclic(docs, "depends_on")
+    violations += check_status_enum(docs)
+    warnings = check_body_length(docs)
 
     if violations:
         print("VIOLATIONS:", file=sys.stderr)
@@ -318,11 +426,19 @@ def main(root):
         )
         sys.exit(1)
 
+    if warnings:
+        print("WARNINGS:", file=sys.stderr)
+        for w in warnings:
+            print(f"  - {w}", file=sys.stderr)
+        print(file=sys.stderr)
+
     regenerate_map(root, docs)
     n_spec = sum(1 for k, _, _ in docs.values() if k == "spec")
     n_idea = sum(1 for k, _, _ in docs.values() if k == "idea")
+    n_adr = sum(1 for k, _, _ in docs.values() if k == "adr")
     print(
-        f"OK: {n_spec} spec(s), {n_idea} idea(s) consistent. docs/_map.md regenerated."
+        f"OK: {n_spec} spec(s), {n_idea} idea(s), {n_adr} adr(s) consistent. "
+        f"docs/_map.md regenerated."
     )
 
 
