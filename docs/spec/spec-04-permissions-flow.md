@@ -2,9 +2,9 @@
 id: spec-04
 title: Permissions Flow
 type: spec
-status: draft
+status: decided
 created: 2026-04-28
-updated: 2026-04-28
+updated: 2026-04-29
 sources:
   - "[[idea-02-mediness-architecture]]"
 owns: permissions-flow

@@ -2,9 +2,9 @@
 id: spec-07
 title: Onboarding Skill
 type: spec
-status: draft
+status: decided
 created: 2026-04-28
-updated: 2026-04-28
+updated: 2026-04-29
 sources:
   - "[[idea-01-distribution-strategy]]"
 owns: onboarding-skill

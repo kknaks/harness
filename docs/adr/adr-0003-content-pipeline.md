@@ -2,8 +2,8 @@
 id: adr-0003
 title: Content Pipeline
 type: adr
-status: proposed
-date: 2026-04-28
+status: accepted
+date: 2026-04-29
 sources:
   - "[[spec-01-content-pipeline]]"
 tags: [adr]
@@ -130,4 +130,4 @@ Karpathy 의 3단 흐름 (Raw → Wiki → Schema) 은 *지식 누적 + 활용* 
 
 ## Notes
 
-_(시간순 append: status 전이, 적용 결과, 후속 학습, 관련 spec 추가 등)_
+- 2026-04-29: status proposed → accepted. source [[spec-01-content-pipeline]] status → decided (통째 흡수).
