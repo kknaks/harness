@@ -112,6 +112,24 @@ sources:
 - 결정 자체가 뒤집히면 새 ADR + `supersedes` 로 옛것 대체.
 - sources 는 불변 lineage. 이후 추가 관련 spec 은 Notes 로 참조.
 
+## Source spec status 전이 (spec→adr 시)
+
+`spec-to-adr.sh` 는 ADR 만 생성 (status=`proposed`). **source spec status 는 자동 갱신 X** — 흡수 패턴이 케이스마다 다르기 때문. 메인테이너가 ADR lifecycle 진행에 따라 수동 갱신:
+
+| 흡수 패턴 | source spec status | 시점 |
+|-----------|---------------------|------|
+| spec 통째로 한 ADR | `decided` | ADR 가 `accepted` 된 시점 |
+| spec 의 일부 결정만 ADR (다른 부분 운영 명세로 살아있음) | `active` | ADR 가 `accepted` 된 시점 |
+| spec 이 새 ADR/spec 으로 supersede | `deprecated` | supersede ADR/spec 이 `accepted` 된 시점 |
+
+ADR 가 `proposed` 단계 (검토 중) 에는 source spec 그대로 (`draft` or `active`). ADR 가 `accepted` 로 굳을 때 위 표대로 spec 갱신.
+
+ADR status 전이 자체:
+- `proposed` — scaffold 직후. 검토 중.
+- `accepted` — 메인테이너 합의 완료. 결정 효력 발휘. source spec status 도 같이 갱신.
+- `superseded` — 새 ADR 가 `supersedes` 로 대체.
+- `deprecated` — 더 이상 안 씀 (대체 ADR 없이 폐기).
+
 ## ADR Lifecycle — 관련 사항이 추가될 때
 
 ADR 본문(Decision)은 **immutable** — 한 번 적힌 결정 텍스트는 거의 안 건드린다. 변화는 (1) `## Notes` append, (2) 새 ADR + 관계 필드, 둘 중 하나.
@@ -133,9 +151,16 @@ ADR 본문(Decision)은 **immutable** — 한 번 적힌 결정 텍스트는 거
 
 ## Scripts
 
+**메타 레이어** (`docs/`)
 - `scripts/idea-to-spec.sh <idea> [slug]` — idea → 새 spec 생성. **`[slug]` 옵션** 으로 1 idea → N specs 분할 시 충돌 방지 (kebab-case).
-- `scripts/spec-to-adr.sh <spec> [slug]` — spec → 새 ADR 생성 (`adr-NNNN-{slug}.md`, status=proposed, body=Context/Decision/Consequences). **`[slug]` 옵션** 동일.
+- `scripts/spec-to-adr.sh <spec> [slug]` — spec → 새 ADR 생성 (`docs/adr/adr-NNNN-{slug}.md`, status=proposed, body=Context/Decision/Consequences).
 - `scripts/merge.sh <idea> <spec>` — 기존 spec 의 sources 에 idea 추가 (멱등).
+
+**콘텐츠 레이어** (`content/`, adr-0003)
+- `scripts/inbox-to-sources.sh <inbox-file> [slug]` — raw inbox 자산 → `content/sources/sources-NN-<slug>.md` (정체화 + 불변 박제). 본문은 *정체* (이름·목적) scaffold.
+- `scripts/sources-to-wiki.sh <sources-file> [slug]` — sources → `content/wiki/wiki-NN-<slug>.md` (합성 scaffold). 실제 합성 본문은 Claude 가 채움.
+- `scripts/wiki-to-adr.sh <wiki-file> [slug]` — wiki → `content/adr/adr-NNNN-<slug>.md` (콘텐츠 ADR, 메타 ADR 카운터와 분리).
+- `scripts/adr-to-harness.sh <content-adr> <plugin-name>` — ADR → plugin 적용 (Notes 에 lineage 기록만; 패키징은 spec-09 release flow 영역).
 
 **1 idea → N specs 예시**:
 ```

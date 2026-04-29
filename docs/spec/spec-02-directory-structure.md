@@ -2,7 +2,7 @@
 id: spec-02
 title: Directory Structure
 type: spec
-status: draft
+status: decided
 created: 2026-04-28
 updated: 2026-04-28
 sources:

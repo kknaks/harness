@@ -2,7 +2,7 @@
 id: adr-0001
 title: Directory Structure
 type: adr
-status: proposed
+status: accepted
 date: 2026-04-28
 sources:
   - "[[spec-02-directory-structure]]"
@@ -71,5 +71,5 @@ mediness 는 두 개의 서로 다른 레이어를 동시에 운영해야 한다
 
 ## Notes
 
-_(시간순 append: status 전이, 적용 결과, 후속 학습, 관련 spec 추가 등)_
+- 2026-04-28: status proposed → accepted. source spec-02 status → decided (통째 흡수 패턴).
 

@@ -47,10 +47,10 @@ idea→spec 의 `promote-docs` 스킬이 검증된 패턴(스크립트 + Claude 
 |--------|----------|------|
 | idea → spec | `idea-to-spec.sh` | ✓ 구현 |
 | spec → adr (메타) | `spec-to-adr.sh` | ✓ 구현 |
-| inbox → sources | `inbox-to-sources.sh` | 미구현 |
-| sources → wiki | `sources-to-wiki.sh` | 미구현 |
-| wiki → adr (콘텐츠) | `wiki-to-adr.sh` | 미구현 |
-| adr → harness | `adr-to-harness.sh` | 미구현 |
+| inbox → sources | `inbox-to-sources.sh` | ✓ 구현 (scaffold) |
+| sources → wiki | `sources-to-wiki.sh` | ✓ 구현 (scaffold) |
+| wiki → adr (콘텐츠) | `wiki-to-adr.sh` | ✓ 구현 (scaffold) |
+| adr → harness | `adr-to-harness.sh` | ✓ 구현 (lineage 기록만; 패키징은 spec-09) |
 | (병합) idea → 기존 spec | `merge.sh` | ✓ 구현 |
 
 **스킬 구조**
