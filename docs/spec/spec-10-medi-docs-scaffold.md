@@ -2,9 +2,9 @@
 id: spec-10
 title: Medi Docs Scaffold
 type: spec
-status: draft
+status: decided
 created: 2026-04-28
-updated: 2026-04-28
+updated: 2026-04-29
 sources:
   - "[[idea-03-user-docs-scaffold]]"
 owns: medi-docs-scaffold
