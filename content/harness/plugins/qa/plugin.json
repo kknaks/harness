@@ -1,6 +1,0 @@
-{
-  "name": "harness-qa",
-  "version": "0.0.0",
-  "description": "mediness qa role plugin (테스트 시나리오, 회귀 체크, 결함 분류)",
-  "autoUpdate": true
-}

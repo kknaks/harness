@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+# Usage: init.sh <role> [role...] [--force]
+#
+# `harness` plugin 의 role-templates/<role>/ 를 *현재 프로젝트의* `.claude/`
+# 로 복사. role-templates 자체는 plugin 의 비활성 영역 — Claude Code 가
+# 자동 활성하지 않음. 사용자가 본 init 호출 시에만 프로젝트로 박힘 →
+# 그 시점부터 Claude Code 가 *프로젝트 로컬* SKILL 로 인식.
+#
+# Arguments:
+#   <role>    backend / frontend / planner / pm / qa / infra (운영 누적순)
+#   --force   기존 .claude/skills/<n>/ 가 있으면 덮어쓰기 (기본은 skip + 경고)
+#
+# Output: 복사한 자산 목록 + 부동 (skipped) 자산 카운트.
+# Exit codes:
+#   0 = 성공 (전체/부분)
+#   1 = 인자 부족
+#   2 = 알 수 없는 role
+
+set -euo pipefail
+
+FORCE=false
+ROLES=()
+for arg in "$@"; do
+  case "$arg" in
+    --force) FORCE=true ;;
+    -h|--help)
+      sed -n '2,/^$/p' "$0" | sed 's/^# \?//'
+      exit 0
+      ;;
+    *) ROLES+=("$arg") ;;
+  esac
+done
+
+# Plugin root: scripts → harness skill → skills → base
+PLUGIN_ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
+ROLE_TEMPLATES="$PLUGIN_ROOT/role-templates"
+
+if [[ ${#ROLES[@]} -eq 0 ]]; then
+  echo "Usage: $0 <role> [role...] [--force]" >&2
+  echo "" >&2
+  echo "Available roles:" >&2
+  if [[ -d "$ROLE_TEMPLATES" ]]; then
+    for d in "$ROLE_TEMPLATES"/*/; do
+      [[ -d "$d" ]] || continue
+      role=$(basename "$d")
+      n_skills=$(find "$d/skills" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
+      printf "  %-12s  (%s skill%s)\n" "$role" "$n_skills" "$([ "$n_skills" -eq 1 ] && echo "" || echo "s")" >&2
+    done
+  fi
+  exit 1
+fi
+
+PROJECT_DIR="$(pwd)"
+TARGET="$PROJECT_DIR/.claude"
+mkdir -p "$TARGET/skills"
+
+declare -i copied=0 skipped=0
+
+copy_skill() {
+  local src="$1" dst="$2"
+  if [[ -e "$dst" ]] && ! $FORCE; then
+    echo "  ! skip (exists): .claude/skills/$(basename "$dst")"
+    skipped=$((skipped + 1))
+    return
+  fi
+  rm -rf "$dst"
+  cp -R "$src" "$dst"
+  echo "  → .claude/skills/$(basename "$dst")"
+  copied=$((copied + 1))
+}
+
+echo "Plugin root: $PLUGIN_ROOT"
+echo "Project:     $PROJECT_DIR"
+echo ""
+
+for role in "${ROLES[@]}"; do
+  src="$ROLE_TEMPLATES/$role"
+  if [[ ! -d "$src" ]]; then
+    echo "Unknown role: $role" >&2
+    avail=()
+    for d in "$ROLE_TEMPLATES"/*/; do
+      [[ -d "$d" ]] && avail+=("$(basename "$d")")
+    done
+    echo "Available: ${avail[*]}" >&2
+    exit 2
+  fi
+  echo "Role: $role"
+  if [[ -d "$src/skills" ]]; then
+    for skill in "$src/skills"/*/; do
+      [[ -d "$skill" ]] || continue
+      name=$(basename "$skill")
+      copy_skill "$skill" "$TARGET/skills/$name"
+    done
+  fi
+  # role-specific hooks (있으면 .claude/hooks/ 에 추가)
+  if [[ -d "$src/hooks" ]]; then
+    mkdir -p "$TARGET/hooks"
+    cp -R "$src/hooks/." "$TARGET/hooks/" 2>/dev/null || true
+    echo "  → .claude/hooks/  (role hook 복사)"
+  fi
+done
+
+# medi_docs scaffold (처음 셋업 시 — 이미 있으면 no-op, ADR-0008)
+if [[ -x "$PLUGIN_ROOT/scripts/scaffold-medi-docs.sh" ]]; then
+  echo ""
+  echo "medi_docs scaffold:"
+  "$PLUGIN_ROOT/scripts/scaffold-medi-docs.sh" "$PROJECT_DIR" 2>&1 | sed 's/^/  /' || true
+fi
+
+echo ""
+echo "✓ Done. copied=$copied, skipped=$skipped"
+if (( skipped > 0 )) && ! $FORCE; then
+  echo ""
+  echo "기존 파일은 보존됨. 갱신을 원하면 --force 로 재실행:"
+  echo "  $0 ${ROLES[*]} --force"
+fi
