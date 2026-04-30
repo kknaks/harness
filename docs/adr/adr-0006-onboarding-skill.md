@@ -83,7 +83,7 @@ idea-01 에서는 "신입 온보딩 자동화" 가 출발점이었지만, 운영
 
 | Action | 누가 | 언제 | 의존 / 산출 |
 |--------|------|------|--------------|
-| `harness` skill 작성 (`.claude/skills/harness/SKILL.md` + 분기 가이드) | 메인테이너 | v0.1 release 전 | [[spec-13-skill-authoring-rules]] 룰 따름 |
+| `harness` skill 작성 (`content/harness/plugins/base/skills/harness/SKILL.md` + 분기 가이드) | 메인테이너 | v0.1 release 전 | [[spec-13-skill-authoring-rules]] 룰 따름 |
 | bootstrap 3단계 안내 README + CONTRIBUTING.md | 메인테이너 | v0.1 release 전 | — |
 | `harness` skill 의 *상태 확인* 시나리오 우선 구현 | 메인테이너 | v0.1 release 전 | dry-run 기본 |
 | 처음 셋업 / 역할 변경 / 다중 역할 시나리오 | 메인테이너 | v0.1 release 전 | base + role plugin 의 install/uninstall 명령 의존 |
@@ -131,4 +131,5 @@ idea-01 에서는 "신입 온보딩 자동화" 가 출발점이었지만, 운영
 
 ## Notes
 
-- 2026-04-29: status proposed → accepted. source [[spec-07-onboarding-skill]] status → decided (통째 흡수).
+- 2026-04-29: status proposed → accepted. source [[spec-07-onboarding-skill]] status → accepted (통째 흡수).
+- 2026-04-29: `harness` skill 위치를 `.claude/skills/harness/` → `content/harness/plugins/base/skills/harness/` 로 정정. 사용자 호출 = 플러그인용 영역 ([[adr-0007-skill-authoring-rules]] §1 두 영역 분류).

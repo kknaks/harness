@@ -1,0 +1,39 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/secret-guard.sh",
+            "condition": "${HARNESS_HOOK_H4_ENABLED:-true}"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/medi-validate.sh",
+            "condition": "${HARNESS_HOOK_H1_ENABLED:-true}"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/env-check.sh",
+            "condition": "${HARNESS_HOOK_H5_ENABLED:-true}"
+          }
+        ]
+      }
+    ]
+  }
+}

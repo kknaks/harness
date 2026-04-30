@@ -2,7 +2,7 @@
 id: spec-04
 title: Permissions Flow
 type: spec
-status: decided
+status: accepted
 created: 2026-04-28
 updated: 2026-04-29
 sources:

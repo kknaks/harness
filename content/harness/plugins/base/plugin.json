@@ -1,0 +1,6 @@
+{
+  "name": "harness-base",
+  "version": "0.0.0",
+  "description": "mediness 공통 자산 (모든 role plugin 의 의존)",
+  "autoUpdate": true
+}

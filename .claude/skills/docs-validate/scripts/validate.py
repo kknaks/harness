@@ -31,14 +31,23 @@ REL_FIELDS = ["related_to", "supersedes", "depends_on"]
 LINK_FIELDS = ["sources"] + REL_FIELDS
 BODY_LENGTH_LIMIT = 5000
 
+# R10 role enum (content/adr only — meta-ADR 에는 N/A).
+# ADR-0011 §1 정의 + ADR-0004 Notes 2026-04-30. 선택 필드 — 미박힘 통과, 박혔는데 enum 외면 차단.
+ROLE_ALLOWED = ["base", "planner", "pm", "frontend", "backend", "qa", "infra"]
+
 # adr.sources -> spec, spec.sources -> idea
 SOURCE_PREFIX = {"spec": "idea-", "adr": "spec-"}
 
-# status enum per kind. idea status is optional (default: open). spec/adr required.
+# status enum per kind. idea/콘텐츠 단계 status 는 *선택*; spec/adr 는 *필수*.
+# adr 는 메타·콘텐츠 공통 (ADR-0004 R9, ADR-0003 §status 라이프사이클).
 STATUS_ALLOWED = {
     "idea": ["open", "absorbed", "archived", "superseded"],
-    "spec": ["draft", "active", "decided", "deprecated"],
+    "spec": ["draft", "active", "accepted", "deprecated"],
     "adr": ["proposed", "accepted", "superseded", "deprecated"],
+    "inbox": ["pending", "promoted", "archived"],
+    "sources": ["pending", "promoted", "superseded"],
+    "wiki": ["pending", "promoted", "superseded"],
+    "harness": ["pending", "released"],
 }
 
 
@@ -195,6 +204,92 @@ def check_status_enum(docs):
         if status not in allowed:
             out.append(
                 f"[bad-status] {stem}: status={status!r} not in {allowed}"
+            )
+    return out
+
+
+def check_skill_layout(root):
+    """R11: SKILL 디렉토리 표준 자산 존재 검증 (S5/S6/S7).
+
+    스캔 대상:
+      - .claude/skills/*/                                 (메인테이너 스킬)
+      - content/harness/plugins/*/skills/*/                (사용자 배포본 — flat)
+      - content/harness/plugins/*/skills/<role>/*/         (사용자 배포본 — role 분리)
+
+    SKILL 디렉토리 = `SKILL.md` 보유 디렉토리. 발견 시 다음 검증:
+      - S5: `examples/` 디렉토리 + 1+ non-hidden 자산
+      - S6: `checklist.md` 파일 존재
+      - S7: `rules.md` 파일 존재
+
+    ADR-0007 §1 + Notes 2026-04-30. 메인테이너·사용자 영역 동일 룰.
+    """
+    out = []
+    skill_roots = []
+    maint = root / ".claude" / "skills"
+    if maint.exists():
+        skill_roots.append(maint)
+    plugins = root / "content" / "harness" / "plugins"
+    if plugins.exists():
+        for p in plugins.iterdir():
+            if not p.is_dir() or p.name.startswith("."):
+                continue
+            sk = p / "skills"
+            if sk.exists():
+                skill_roots.append(sk)
+
+    skill_dirs = []
+    for sr in skill_roots:
+        # 1단 (skills/<name>/SKILL.md) 또는 2단 (skills/<role>/<name>/SKILL.md)
+        for child in sr.iterdir():
+            if not child.is_dir() or child.name.startswith("."):
+                continue
+            if (child / "SKILL.md").exists():
+                skill_dirs.append(child)
+                continue
+            for grand in child.iterdir():
+                if not grand.is_dir() or grand.name.startswith("."):
+                    continue
+                if (grand / "SKILL.md").exists():
+                    skill_dirs.append(grand)
+
+    for sk in skill_dirs:
+        rel = sk.relative_to(root)
+        ex = sk / "examples"
+        if not ex.exists() or not ex.is_dir():
+            out.append(f"[missing-skill-asset] {rel}: examples/ 디렉토리 누락 (S5)")
+        else:
+            assets = [c for c in ex.iterdir() if not c.name.startswith(".")]
+            if not assets:
+                out.append(f"[missing-skill-asset] {rel}: examples/ 비어있음 (S5)")
+        if not (sk / "checklist.md").exists():
+            out.append(f"[missing-skill-asset] {rel}: checklist.md 누락 (S6)")
+        if not (sk / "rules.md").exists():
+            out.append(f"[missing-skill-asset] {rel}: rules.md 누락 (S7)")
+    return out
+
+
+def check_content_adr_role(root):
+    """R10: content/adr/*.md 의 role 필드 enum 검증.
+
+    선택 필드 — 미박힘은 통과 (operator 가 빠뜨려도 차단 안 함). 박혔는데
+    enum 외 값이면 차단. 메타 ADR (`docs/adr/`) 에는 N/A — content layer 만.
+    ADR-0011 §1 + ADR-0004 Notes 2026-04-30.
+    """
+    out = []
+    adr_dir = root / "content" / "adr"
+    if not adr_dir.exists():
+        return out
+    for f in sorted(adr_dir.glob("adr-*.md")):
+        fm = parse_frontmatter(f.read_text())
+        if not fm:
+            continue
+        role = fm.get("role")
+        if role is None:
+            continue
+        if role not in ROLE_ALLOWED:
+            out.append(
+                f"[bad-role] content/adr/{f.name}: role={role!r} "
+                f"not in {ROLE_ALLOWED}"
             )
     return out
 
@@ -402,6 +497,114 @@ def regenerate_map(root, docs):
     map_path.write_text("\n".join(lines))
 
 
+def regenerate_content_map(root):
+    """Minimal content/_map.md placeholder. ADR-0001 § 콘텐츠 레이어 인덱스.
+
+    콘텐츠 단계 (inbox/sources/wiki/adr/harness) frontmatter 명세 미정 (ADR-0004
+    line 130) — 자산별 풍부 인덱싱은 명세 박힌 후 보강. 현재는 단계별 자산 카운트만.
+    """
+    content_root = root / "content"
+    if not content_root.exists():
+        return  # 콘텐츠 레이어 미가동
+    map_path = content_root / "_map.md"
+
+    # 자산 단위 카운트 — ADR-0003 §자산 단위
+    # - inbox        : 직접 자식 (파일 or 디렉토리) = 1 자산
+    # - sources/wiki/adr : .md 1 file = 1 자산 (sources 평탄화 룰을 wiki/adr 도 승계)
+    # - harness      : harness/plugins/<name>/ = 1 plugin = 1 자산
+    #                  (.claude-plugin/marketplace.json 은 배포 metadata, 자산 아님)
+    stages = ["inbox", "sources", "wiki", "adr", "harness"]
+    counts = {}
+    status_counts = {}  # stage -> {status: n}. ADR-0003 §status 라이프사이클.
+    cat_counts = {}     # category -> n. ADR-0003 §categories.
+    for stage in stages:
+        d = content_root / stage
+        status_counts[stage] = {}
+        if not d.exists():
+            counts[stage] = 0
+            continue
+        if stage == "inbox":
+            counts[stage] = sum(
+                1 for c in d.iterdir() if not c.name.startswith(".")
+            )
+            # inbox raw 는 frontmatter 미박 가능 — status/categories 인덱싱 skip
+        elif stage == "harness":
+            plugins_dir = d / "plugins"
+            counts[stage] = (
+                sum(
+                    1
+                    for c in plugins_dir.iterdir()
+                    if c.is_dir() and not c.name.startswith(".")
+                )
+                if plugins_dir.exists()
+                else 0
+            )
+            # harness plugin manifest status/categories 인덱싱은 v0.2 운영 후
+        else:
+            files = [f for f in d.rglob("*.md") if f.name != "_map.md"]
+            counts[stage] = len(files)
+            for f in files:
+                fm = parse_frontmatter(f.read_text())
+                if not fm:
+                    continue
+                if fm.get("status"):
+                    s = fm["status"]
+                    status_counts[stage][s] = status_counts[stage].get(s, 0) + 1
+                cats = fm.get("categories")
+                if isinstance(cats, list):
+                    for c in cats:
+                        cat_counts[c] = cat_counts.get(c, 0) + 1
+    total = sum(counts.values())
+
+    def fmt_stage(stage):
+        c = counts[stage]
+        if c == 0:
+            return f"{stage} 0"
+        sc = status_counts[stage]
+        if sc:
+            parts = ", ".join(f"{s}: {n}" for s, n in sorted(sc.items()))
+            return f"{stage} {c} ({parts})"
+        return f"{stage} {c}"
+
+    lines = [
+        "# Content Map",
+        "",
+        "> 자동 생성. 수동 편집 금지. 재생성: "
+        "`.claude/skills/docs-validate/scripts/validate.sh`. ADR-0001 §콘텐츠 레이어 인덱스 "
+        "(메타 `docs/_map.md` 와 평행).",
+        "",
+        f"_5단 자산: {fmt_stage('inbox')} · {fmt_stage('sources')} · "
+        f"{fmt_stage('wiki')} · {fmt_stage('adr')} · {fmt_stage('harness')} "
+        f"(총 {total})_",
+        "",
+    ]
+    # categories facet (ADR-0003 §categories)
+    if cat_counts:
+        lines.append("## Categories")
+        lines.append("")
+        for cat, n in sorted(cat_counts.items(), key=lambda kv: (-kv[1], kv[0])):
+            lines.append(f"- `{cat}` — {n}")
+        lines.append("")
+    lines += [
+        "## Stages",
+        "",
+        "- `inbox/` — 모든 기여자 공용 입구. raw dump",
+        "- `sources/` — 1차 가공 = 정체화 (이름·목적 박음, 이후 불변)",
+        "- `wiki/` — 합성·정리 (LLM + 인간 검토)",
+        "- `adr/` — atomic 결정 (자산-plugin 매핑)",
+        "- `harness/` — 배포 (5단 마지막 = distribution monorepo)",
+        "",
+        "레거시 자산 (회사에 흩어진 SKILL/hook/MCP/settings) 은 `inbox/` PR 로 흘러들어옴 "
+        "→ 메인테이너 triage ([[adr-0002-permissions-flow]] §inbox 워크플로우 §4) "
+        "→ 콘텐츠 5단 또는 메타 3단 분기.",
+        "",
+        "_(자산별 풍부 인덱싱은 콘텐츠 단계 frontmatter 명세 박힌 후 보강 — "
+        "ADR-0004 line 130)_",
+        "",
+    ]
+    map_path.write_text("\n".join(lines))
+
+
 def main(root):
     root = Path(root)
     spec_dir = root / "docs" / "spec"
@@ -414,6 +617,8 @@ def main(root):
     violations += check_acyclic(docs, "supersedes")
     violations += check_acyclic(docs, "depends_on")
     violations += check_status_enum(docs)
+    violations += check_content_adr_role(root)
+    violations += check_skill_layout(root)
     warnings = check_body_length(docs)
 
     if violations:
@@ -433,12 +638,18 @@ def main(root):
         print(file=sys.stderr)
 
     regenerate_map(root, docs)
+    regenerate_content_map(root)
     n_spec = sum(1 for k, _, _ in docs.values() if k == "spec")
     n_idea = sum(1 for k, _, _ in docs.values() if k == "idea")
     n_adr = sum(1 for k, _, _ in docs.values() if k == "adr")
+    content_msg = (
+        " content/_map.md regenerated."
+        if (root / "content").exists()
+        else ""
+    )
     print(
         f"OK: {n_spec} spec(s), {n_idea} idea(s), {n_adr} adr(s) consistent. "
-        f"docs/_map.md regenerated."
+        f"docs/_map.md regenerated.{content_msg}"
     )
 
 

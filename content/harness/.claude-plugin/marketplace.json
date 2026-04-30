@@ -1,0 +1,14 @@
+{
+  "name": "harness",
+  "owner": "medisolve",
+  "description": "mediness 사내 공용 하네스 — 6 role plugin + base 공통 자산",
+  "plugins": [
+    { "name": "harness-base", "source": "./plugins/base" },
+    { "name": "harness-planner", "source": "./plugins/planner" },
+    { "name": "harness-pm", "source": "./plugins/pm" },
+    { "name": "harness-frontend", "source": "./plugins/frontend" },
+    { "name": "harness-backend", "source": "./plugins/backend" },
+    { "name": "harness-qa", "source": "./plugins/qa" },
+    { "name": "harness-infra", "source": "./plugins/infra" }
+  ]
+}

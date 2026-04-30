@@ -56,7 +56,7 @@ Karpathy 의 3단 흐름 (Raw → Wiki → Schema) 은 *지식 누적 + 활용* 
 | --- | ------- | ---------- | -------------- | ---------------------- |
 | 1   | inbox   | 집합소        | 사용자 제안, 레거시 자산 | raw dump               |
 | 2   | sources | 1차 가공 = 원본 | inbox 항목       | 네이밍 + 목적 명시. 이후 불변     |
-| 3   | wiki    | 합성·정리      | sources 문서     | 비슷한·연관 내용 묶고 다듬은 지식 노드 |
+| 3   | wiki    | 합성·정리      | sources 문서     | **주제·기능 단위로** 비슷·연관 sources 묶고 다듬은 지식 노드 (project-agnostic) |
 | 4   | adr     | 결정본 (ADR)  | wiki 결과        | atomic 결정 로그           |
 | 5   | harness | 배포         | adr            | 배포 준비된 plugin          |
 
@@ -67,7 +67,51 @@ Karpathy 의 3단 흐름 (Raw → Wiki → Schema) 은 *지식 누적 + 활용* 
 - 수직(상위로): 단방향 승격만. 상위가 `sources` 로 출처를 가리킴.
 - 어휘는 메타 레이어(idea/spec/adr)와 공용: `sources`, `related_to`, `supersedes`, `depends_on`.
 
+**자산 단위**
+- **inbox 직접 자식 = 1 자산 단위 (입력)**. 파일이면 1 .md, 디렉토리면 디렉토리 통째.
+  - `content/inbox/note.md` → 파일 단위
+  - `content/inbox/<name>/` (안에 `SKILL.md` + `scripts/` 등) → 디렉토리 단위 (통째 1 자산)
+- **sources 박제 = 항상 `content/sources/sources-NN-<slug>.md` 1 file (출력)**. 입력이 디렉토리라도 .md 1 file 로 *평탄화* — frontmatter 1곳 SSOT + raw 본문 인용 통합. 디렉토리 자산의 file system 구조는 .md 본문 안 *각 파일별 코드 블록 인용* 으로 텍스트 보존.
+- 평탄화 합성 책임: sh 가 frontmatter scaffold 박고, **Claude 가 본문 합성** (원본 인용 + 정체 한 줄) — ADR-0012 §1.
+- inbox raw 는 그대로 둠 ([[adr-0002-permissions-flow]] §inbox 워크플로우 §4). sources 박제 후 메인테이너 수동 정리.
+- 이후 단계 (wiki/adr/harness) 의 자산 단위는 단계별 의미에 따라 자유 — 운영 시 보강.
+
 **6 role**: 기획 · PM · 프론트 · 백엔드 · QA · 인프라.
+
+**status 라이프사이클** (콘텐츠 단계 자산 작업 추적)
+
+각 단계 자산이 *어디까지 처리됐는지* frontmatter `status` 필드로 추적. 미박은 자산은 통과 ([[adr-0004-frontmatter-naming]] R9 — status 콘텐츠 단계 *선택*).
+
+| 단계 | status 의미 |
+|------|-------------|
+| inbox | `pending` raw, sources 미처리 / `promoted` sources 박힘 / `archived` 정리 후 보존 |
+| sources | `pending` 정체화 직후, wiki 미합성 / `promoted` wiki 합성됨 / `superseded` 정정 재박제 |
+| wiki | `pending` 합성됨, ADR 미결정 / `promoted` content/adr 박힘 / `superseded` 재합성 |
+| content/adr | `proposed` / `accepted` / `superseded` / `deprecated` (메타 adr 동일 — [[adr-0004-frontmatter-naming]] R9) |
+| harness | `pending` 자산 입주 직후 / `released` plugin 배포됨 |
+
+**자동 갱신 룰** (promote-docs sh 책임)
+
+- `inbox-to-sources.sh` → 새 sources `status: pending` + 입력 inbox `status: promoted`
+- `sources-to-wiki.sh` → 새 wiki `status: pending` + 입력 sources `status: promoted`
+- `merge-sources-to-wiki.sh` → 입력 sources `status: promoted` (wiki 합성 진행 중이라 wiki status 미변)
+- `wiki-to-adr.sh` → 새 adr `status: proposed` + 입력 wiki `status: promoted`
+- `adr-to-harness.sh` → 새 harness 자산 `status: pending` (release 는 spec-09 V2 dogfood → V3 release 흐름에서 갱신)
+
+자동 갱신은 sh 책임. 메인테이너가 직접 status 조작 가능 (예: superseded 표시, 정정 재박제).
+
+**categories — 자산 인덱싱 차원** (콘텐츠 단계 권장, 메타 단계 선택)
+
+자산을 *작업 종류* (코드 리뷰·테스트 설계·리팩토링·배포·모니터링 등) 로 분류하는 자유 어휘. plugin role (사람 역할) 과 다른 차원 — 같은 *코드 리뷰* SKILL 이 backend·frontend 둘 다 입주 가능. categories 는 그것을 가로지르는 facet.
+
+```yaml
+categories: [code-review, refactoring]
+```
+
+- **자유 enum** — 운영 중 자연 형성. 1000+ 자산 누적 후 클러스터 발견되면 enum 강제 ([[adr-0004-frontmatter-naming]] R 룰셋 강화 follow-up).
+- **다중** — 한 자산이 여러 카테고리 가능.
+- **인덱싱** — `content/_map.md` 가 카테고리별 카운트 자동 표시.
+- 모든 type (idea/spec/adr/inbox/sources/wiki/harness) 공통 *선택* 필드.
 
 **강제 룰** (docs-validate 가 검증; 구현은 도구 작업, 룰 명세는 이 ADR 의 결정)
 
@@ -130,4 +174,8 @@ Karpathy 의 3단 흐름 (Raw → Wiki → Schema) 은 *지식 누적 + 활용* 
 
 ## Notes
 
-- 2026-04-29: status proposed → accepted. source [[spec-01-content-pipeline]] status → decided (통째 흡수).
+- 2026-04-29: status proposed → accepted. source [[spec-01-content-pipeline]] status → accepted (통째 흡수).
+- 2026-04-29: 5단 가동 e2e 첫 시도에서 발견 — *자산 단위* 명세 부재 갭. inbox 직접 자식 = 자산 단위 (파일/디렉토리), sources 박제 단위 보존 룰 박음. wiki 이상 단위는 운영 시 보강.
+- 2026-04-29: 자산 단위 룰 즉시 정정 — sources 박제는 *항상 .md 1 file* (입력이 디렉토리라도 평탄화). frontmatter SSOT 1곳 + raw 본문은 .md 안 코드 블록 인용. 디렉토리 박제 모델 폐기.
+- 2026-04-30: §status 라이프사이클 섹션 추가 — 콘텐츠 단계 자산 작업 추적 (status enum + sh 자동 갱신 룰). 3000+ 자산 확장 대비.
+- 2026-04-30: §categories 차원 추가 — 자산 *작업 종류* 자유 enum, 다중. plugin role 과 다른 차원의 facet. content/_map.md 카테고리별 카운트 인덱싱.

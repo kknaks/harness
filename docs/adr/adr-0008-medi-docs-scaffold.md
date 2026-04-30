@@ -103,15 +103,44 @@ install hook 강제 X — 사용자 통제권 보존. `harness` skill 의 idempo
 - plugin uninstall 시 `medi_docs/` **남김** — 콘텐츠는 사용자 자산.
 - uninstall 안내 메시지: "medi_docs/ 는 사용자 자산이라 보존됩니다. 필요 시 직접 삭제하세요."
 
-### 6. 강제 룰 (D1-D3)
+### 6. 강제 룰 (D1-D4)
 
 | 룰 | 검증 대상 | 위반 시 |
 |----|-----------|---------|
 | **D1** cut 직전 검증 | `current/` 전체가 [[adr-0004-frontmatter-naming]] R4-R9 통과 | **차단** (cut 불가) |
 | **D2** `v{label}/` 불변 | 박제된 `v{label}/` 가 git history 상 머지 후 수정 | **경고** (의도된 정정인 경우 메인테이너 판단; 권장은 새 cut) |
 | **D3** 카테고리 디렉토리 일관성 | `medi_docs/current/` + 모든 `v{label}/` 가 9 카테고리 동일 보유 | **경고** (사용자가 의도적으로 카테고리 추가 시 본인 책임) |
+| **D4** lineage 필수 | §7 의 진실 흐름 — 모든 비-planning 문서가 `sources:` 최소 1개 보유 (retrospective 만 다수 cross-cutting) | **차단** (`docs-validate` 실패) |
 
 `docs-validate` 가 multi-target 으로 사용자 medi_docs/ 도 검증 (메인테이너 도구와 별개 산출물; [[spec-12-medi-docs-tooling]] 에서 사용자 배포본 명세).
+
+### 7. 진입점·lineage 위계
+
+medi_docs 의 단일 진실 진입점은 `planning/` (최상위 진실 — *왜·무엇을*). `plan/` 은 planning 의 파생 진실 (*어떻게·언제*). 디렉토리는 §1 의 9 카테고리 flat 그대로 유지하고, 위계는 frontmatter `sources:` ([[adr-0004-frontmatter-naming]] 의 관계 4종 어휘) 로만 표현한다.
+
+**진실 흐름**
+
+```
+planning/                                       (root)
+  ├─ policy/*       sources: [[planning/...]]
+  └─ plan/*         sources: [[planning/...]]
+        ├─ spec/*           sources: [[plan/...]]
+        ├─ adr/*            sources: [[spec/...]] 또는 [[plan/...]]
+        ├─ test/*           sources: [[spec/...]]
+        ├─ runbook/*        sources: [[spec/...]]
+        └─ release-notes/*  sources: [[plan/...]]   (cut 시점 산출)
+
+retrospective/*   sources: 다수 cross-cutting (planning/plan/spec 등)
+```
+
+**원칙**
+
+- *planning 은 root* — `sources:` 비어있거나 외부 (비전·RFP 등) 만 가리킬 수 있음.
+- *비-planning 문서는 `sources:` 최소 1개 필수*. retrospective 만 다수 cross-cutting.
+- *위계는 frontmatter 로만* — 카테고리 디렉토리는 §1 그대로 평면, 위계 깊이는 `sources:` 그래프로 표현.
+- *진입점 1개* — Claude·사용자가 medi_docs 들어올 때 `planning/` 부터 읽고 `sources:` 그래프 따라 내려감. `_map.md` 가 이 트리를 시각화.
+
+강제 룰은 §6 의 **D4**.
 
 ## Alternatives Considered
 
@@ -137,7 +166,7 @@ install hook 강제 X — 사용자 통제권 보존. `harness` skill 의 idempo
 | `harness` skill 의 *처음 셋업* 분기에 medi_docs scaffold 로직 추가 | 메인테이너 | v0.1 release 전 | [[adr-0006-onboarding-skill]] |
 | 9 카테고리 README + template scaffold 자산 (base plugin 안 동봉) | 메인테이너 | v0.1 release 전 | [[spec-11-medi-docs-frontmatter]] template 구체 |
 | `/medi:version-cut` skill 작성 (D1-D3 룰 적용) | 메인테이너 | v0.1 release 전 | [[spec-12-medi-docs-tooling]] |
-| `docs-validate` 사용자 배포본 (D1-D3 + R4-R9 multi-target) | 메인테이너 도구 | v0.1 release 전 | base plugin 안 별도 산출물 |
+| `docs-validate` 사용자 배포본 (D1-D4 + R4-R9 multi-target) | 메인테이너 도구 | v0.1 release 전 | base plugin 안 별도 산출물 |
 | uninstall 안내 메시지 작성 | 메인테이너 | v0.1 release 전 | plugin manifest |
 | 카테고리별 `template.md` 작성 (9개) | 메인테이너 | v0.1 release 전 | [[spec-11-medi-docs-frontmatter]] 결정 후 |
 
@@ -181,4 +210,5 @@ install hook 강제 X — 사용자 통제권 보존. `harness` skill 의 idempo
 
 ## Notes
 
-- 2026-04-29: status proposed → accepted. source [[spec-10-medi-docs-scaffold]] status → decided (통째 흡수).
+- 2026-04-29: status proposed → accepted. source [[spec-10-medi-docs-scaffold]] status → accepted (통째 흡수).
+- 2026-04-29: §7 (진입점·lineage 위계) 추가 + §6 D4 강제 룰 추가. `planning/` 단일 진입점, `plan/` 은 파생 진실, 나머지 카테고리는 `sources:` 그래프로 위계 표현.

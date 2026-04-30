@@ -48,9 +48,13 @@ related_to:
 | harness | plugin 배포 (출구) | 사용자는 이것만 받음 |
 
 **inbox PR 워크플로우**
-1. 기여자가 `content/inbox/` 에 파일 추가 PR.
+1. 기여자가 `content/inbox/` 에 파일 추가 PR. 자산 종류 (plugin 자산 / 메타 정책) 무관 — 단일 입구.
 2. 메인테이너 리뷰 → 머지 = inbox 도착.
 3. **머지 ≠ 승격** — sources 이상으로 올리는 건 별도 스킬의 책임 ([[spec-05-promote-skills]]).
+4. **메인테이너 triage** — 머지 후 자산 분류:
+   - **plugin 자산** (구체 SKILL/hook/MCP/settings 파일) → 콘텐츠 5단 (`inbox-to-sources.sh`).
+   - **메타 정책** (스킬 작성법, 훅 정책, MCP 추가 룰 같은 *결정·룰*) → 메타 3단 (`inbox-to-idea.sh` — `docs/idea/idea-NN-slug.md` 새로 scaffold).
+   inbox raw 는 그대로 둠 (R2 대상 X, raw 단계). triage 후 메인테이너가 inbox 파일 수동 정리.
 
 **강제 모델** (현재 결정)
 
@@ -82,6 +86,7 @@ related_to:
 | Action | 누가 | 언제 | 의존 / 산출 |
 |--------|------|------|--------------|
 | `content/inbox/` 디렉토리 생성 | 메인테이너 | 콘텐츠 레이어 가동 시 | [[adr-0001-directory-structure]] |
+| `inbox-to-idea.sh` 스크립트 (메타 정책 분기 자동화) | 메인테이너 도구 | v0.1 (초반 메타 idea 빈도 ↑ 예측) | `.claude/skills/promote-docs/scripts/` |
 | `CONTRIBUTING.md` 에 inbox PR 워크플로우 + 권한 표 명시 | 메인테이너 | inbox 가동 시 | — |
 | 메인테이너가 inbox 외 PR 닫는 규율 정착 (메시지 템플릿 포함) | 메인테이너 | inbox 가동 시 | — |
 | 비개발 PR 마찰 측정 (분기별 검토) | 메인테이너 | 운영 6개월 후 | 마찰 시 Issue 채널 또는 CODEOWNERS 도입 |
@@ -110,7 +115,9 @@ related_to:
 - [ ] 비개발 PR 마찰이 실제 문제로 드러나는지 운영 6개월 후 판단.
 - [ ] 마찰 확인 시 Issue 채널 (Issue → 메인테이너 카피) 도입.
 - [ ] 메인테이너 수가 3명+ 이 되거나 외부 기여자 빈도가 높아지면 CODEOWNERS 도입 검토.
+- [ ] `inbox-to-idea.sh` 운영 후 빈도·오류율 측정 — ADR-0012 자동화 진입 기준 (훅 자동 호출) 적용 여부.
 
 ## Notes
 
-- 2026-04-29: status proposed → accepted. source [[spec-04-permissions-flow]] status → decided (통째 흡수).
+- 2026-04-29: status proposed → accepted. source [[spec-04-permissions-flow]] status → accepted (통째 흡수).
+- 2026-04-29: inbox PR 워크플로우 §4 추가 — *메인테이너 triage* (plugin 자산 vs 메타 정책 분기). `inbox-to-idea.sh` 자동화 v0.1 신설 (초반 메타 idea 빈도 ↑ 예측, ADR-0012 자동화 진입 기준 사전 적용).

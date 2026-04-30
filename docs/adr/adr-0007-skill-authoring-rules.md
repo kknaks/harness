@@ -36,22 +36,24 @@ mediness 의 *skill* 은 두 영역 모두에 존재한다.
 
 ```
 <plugin-or-claude>/skills/<skill-name>/
-├── SKILL.md              # 필수 — 진입점, 본문 500자 이내
+├── SKILL.md              # 필수 — 진입점 (trigger·핵심 흐름·인자), 본문 500자 가이드
+├── rules.md              # 필수 — 스킬이 강제하는 룰셋·정책·금지 사항
+├── examples/             # 필수 — 사용 예 1+ 자산 (실제 결과물 sample)
+├── checklist.md          # 필수 — 운영 체크리스트 (단계별 점검)
 ├── scripts/              # 선택 — 자동화 명령 (.sh 파일)
-├── examples/             # 선택 — scaffold 템플릿, 사용 예시
-├── checklist.md          # 선택 — 운영 체크리스트
-└── reference/            # 선택 — 본문 500자 초과 시 긴 reference 문서 분리
+└── reference/            # 선택 — rules.md 도 길어지면 분리할 긴 reference
 ```
-
-기존 메인테이너 스킬 (`docs-naming` / `docs-validate` / `promote-docs`) 가 이미 이 구조 따름. 신규 SKILL 도 동일 패턴.
 
 | 파일/디렉토리 | 필수 | 책임 |
 |---------------|------|------|
-| `SKILL.md` | **필수** | 스킬 진입점. frontmatter (도구·권한 선언) + 본문 (사용 시점·동작 가이드) |
+| `SKILL.md` | **필수** | 진입점 — *무엇 / 언제 부르나 / 어떻게 호출* (사용자 시점). 500자 가이드 (S3) |
+| `rules.md` | **필수** | 스킬이 *강제하는 룰셋·정책·금지 사항* (결과물 시점). § 절들로 구성 |
+| `examples/*` | **필수** | 사용 예 1+ 자산 (sample 결과물·scaffold 템플릿) |
+| `checklist.md` | **필수** | 운영 체크리스트 (검증 단계·머지 전 점검) |
 | `scripts/*.sh` | 선택 | 자동화 명령. `source ../scripts/sanitize.sh` 헬퍼 사용 권장 |
-| `examples/*.md` | 선택 | scaffold 템플릿 (예: spec-01-cli-shape.md) 또는 사용 예시 |
-| `checklist.md` | 선택 | 운영 체크리스트 (예: 검증 단계, 머지 전 점검) |
-| `reference/*.md` | 선택 | SKILL.md 본문이 500자 초과 시 분리할 긴 reference |
+| `reference/*.md` | 선택 | `rules.md` 도 길어지면 분리할 긴 reference |
+
+**SKILL.md vs rules.md 구분 기준** — SKILL.md = "*무엇 / 언제 / 어떻게 호출*" (사용자 시점, 진입점). rules.md = "*무엇을 강제 / 왜 / 위반 시*" (결과물 시점, 룰셋). SKILL.md 가 비대해진 경우 rules 부분을 rules.md 로 분리해야 표준 충족. Claude 는 trigger 시 SKILL.md 만 로드 → 실제 룰 적용 시점에 rules.md 지연 로드 (token 효율).
 
 ### 2. SKILL.md frontmatter 스키마
 
@@ -80,6 +82,10 @@ env_vars:                               # 선택 (권장)
 | **S2** `allow_commands` 위험 명령 한정 | 위험 분류 명령 호출 시 frontmatter 에 선언 | **차단** (화이트리스트 외 명령) |
 | **S3** 본문 500자 가이드 | frontmatter 제외, unicode codepoint, 코드블록 포함 | **soft 경고** (차단 X) |
 | **S4** context 필드 (`reads_files`/`runs_scripts`/`env_vars`) | 미선언 시 | **권장** (운영 후 강제 전환 검토) |
+| **S5** `examples/` + 1+ 자산 | SKILL 디렉토리 | **차단** |
+| **S6** `checklist.md` 존재 | SKILL 디렉토리 | **차단** |
+| **S7** `rules.md` 존재 | SKILL 디렉토리 | **차단** |
+| **S8** 동적매핑 sanitize | `scripts/*.sh` 가 동적 입력 (`$VAR`·CLI 인자·파일 경로) 사용 시 `source sanitize.sh` 또는 인용 규칙 (`"$VAR"`·`printf %q`) | **soft 경고** (정적 분석 한계) |
 
 ### 3. 위험 명령 분류 (`allow_commands`)
 
@@ -183,9 +189,12 @@ env_vars:                               # 선택 (권장)
 **Follow-ups**
 - [ ] `reads_files`/`runs_scripts`/`env_vars` 권장 → 강제 전환 시점 (운영 6개월 후 위반 사례 측정).
 - [ ] `validate.py` SKILL.md 추가 시 성능 영향 측정.
-- [ ] `create-skill.sh` 도입 시점 (신규 SKILL 빈도 누적 후).
+- [ ] `validate.py` R11 박기 — S5/S6/S7 디렉토리 존재 검증 (`.claude/skills/*/`, `content/harness/plugins/*/skills/*/`, `content/harness/plugins/*/skills/<role>/*/`).
+- [ ] `create-skill.sh` 도입 — S5–S7 강제 결정으로 우선순위 ↑. 신규 SKILL scaffold 가 4 필수 자산 (SKILL.md + rules.md + examples/sample.md + checklist.md) 자동 박음.
+- [ ] 기존 3 SKILL 마이그레이션 — SKILL.md 의 룰셋 부분을 rules.md 로 분리. `docs-naming/checklist.md` 신규 박기.
 - [ ] 새 위험 명령 카테고리 등장 시 분류 기준 갱신.
 
 ## Notes
 
-- 2026-04-29: status proposed → accepted. source [[spec-13-skill-authoring-rules]] status → decided (통째 흡수).
+- 2026-04-29: status proposed → accepted. source [[spec-13-skill-authoring-rules]] status → accepted (통째 흡수).
+- 2026-04-30: §1 표 갱신 — `rules.md` (신규) / `examples/` / `checklist.md` *선택* → **필수** 승격. SKILL.md vs rules.md 책임 분리 (사용자 시점 진입점 vs 결과물 시점 룰셋). Claude trigger 시 SKILL.md 만 로드 → 실제 룰 적용 시점에 rules.md 지연 로드 (token 효율). S5–S8 룰 추가 — examples/checklist/rules 디렉토리 존재 차단 + sanitize soft 경고. 운영 사실 표준 (메인테이너 스킬 3개 examples 3/3, scripts 3/3 보유) 박제 + `rules.md` 로 SKILL.md 비대 root cause 해소. 마이그레이션 영향 — 기존 3 SKILL (`docs-naming` / `docs-validate` / `promote-docs`) 의 SKILL.md 본문 룰셋 → rules.md 이전. validate.py R11 (S5/S6/S7 디렉토리 존재) follow-up.

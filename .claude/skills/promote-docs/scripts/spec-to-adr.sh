@@ -67,11 +67,34 @@ aliases: []
 
 ## Context
 
-(승격 원본: \`$SPEC\`)
+(승격 원본: \`$SPEC\` — 결정 배경·동기·제약)
 
 ## Decision
 
+(atomic 결정 1~2문장 + 구체 §부속 결정)
+
+## Alternatives Considered
+
+| 후보 | 채택 안 한 이유 |
+|------|------------------|
+| | |
+
+## Implementation Path
+
+| Action | 누가 | 언제 | 의존 / 산출 |
+|--------|------|------|--------------|
+| | | | |
+
 ## Consequences
+
+**Pros**
+-
+
+**Cons**
+-
+
+**Follow-ups**
+- [ ]
 
 ## Notes
 

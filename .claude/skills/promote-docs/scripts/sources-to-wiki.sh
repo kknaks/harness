@@ -55,6 +55,7 @@ cat > "$OUT" <<EOF
 id: wiki-$NN
 title: $TITLE
 type: wiki
+status: pending
 sources:
   - "[[$BASE]]"
 tags: [wiki]
@@ -77,5 +78,8 @@ aliases: []
 
 - \`$BASE\`
 EOF
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+python3 "$SCRIPT_DIR/lib/update-status.py" "$SOURCE" promoted 2>/dev/null || true
 
 echo "$OUT"

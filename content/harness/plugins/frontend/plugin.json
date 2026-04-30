@@ -1,0 +1,6 @@
+{
+  "name": "harness-frontend",
+  "version": "0.0.0",
+  "description": "mediness frontend role plugin (React/Next/Vite, 컴포넌트, 디자인 토큰)",
+  "autoUpdate": true
+}

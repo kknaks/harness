@@ -2,14 +2,18 @@
 id: spec-05
 title: Promote Skills
 type: spec
-status: draft
+status: accepted
 created: 2026-04-28
-updated: 2026-04-28
+updated: 2026-04-29
 sources:
   - "[[idea-02-mediness-architecture]]"
 owns: promote-skills
 tags: [spec]
 aliases: []
+related_to:
+  - "[[spec-01-content-pipeline]]"
+  - "[[spec-03-frontmatter-naming]]"
+  - "[[adr-0012-promote-skills]]"
 ---
 
 # Promote Skills
@@ -67,5 +71,5 @@ idea→spec 의 `promote-docs` 스킬이 검증된 패턴(스크립트 + Claude 
 
 ## Open Questions
 
-- [ ] 콘텐츠 단계별 sh 4개의 입력·산출 명세 (해당 레이어 운영 시작 시)
-- [ ] skill 이름을 `promote-docs` 로 일반화 시점
+- [ ] 콘텐츠 단계별 sh 4개의 입력·산출 명세 — *콘텐츠 파이프라인 운영 시작 시* 결정. 현재 scaffold 만 있음 (`inbox-to-sources.sh`, `sources-to-wiki.sh`, `wiki-to-adr.sh`, `adr-to-harness.sh`).
+- [x] skill 이름을 `promote-docs` 로 일반화 시점 — **완료 (2026-04-29 확인)**: `.claude/skills/promote-docs/` 디렉토리 존재 + 7 스크립트 모두 보유. 일반화 이미 완료.

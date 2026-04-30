@@ -50,9 +50,11 @@ related_to:
 - v0.1: base + backend (가장 먼저 dogfood)
 - v0.2: + frontend, + infra
 - v0.3: + qa
-- v0.4: + planning, + pm
+- v0.4: + planner, + pm
 
 각 버전은 자체로 사용 가능하며, 후속 plugin 은 별도 install 로 추가한다.
+
+**버전 라벨 SSOT** — 본 ADR 이 *release 라벨* 의 단일 진실. 타 ADR (0006/0008/0009/0010/0011/0013) 본문의 `v0.1` 표현은 모두 이 시점까지 완료해야 할 *자기 영역의 범위* 의미 (예: ADR-0011 v0.1 = "6 role 디렉토리 모두 scaffold" — 디스크 작업 차원, 본 ADR v0.1 release scope = base + backend dogfood 와 다른 차원이지만 같은 시점). v0.2~v0.4 는 본 ADR roadmap 정의를 따른다.
 
 **dogfood 24h 근거**: (a) 회귀 발견 평균 시간 = 메인테이너 일과 1일 + (b) 다른 timezone 보유 시 한 번 사용 시간. 24h 는 *초기 임의값* — 변경 종류별 (manifest/skill/hook/내용) 차등은 운영 후 결정 (Follow-ups).
 
@@ -126,4 +128,6 @@ post-mortem 작성 채널 후보:
 
 ## Notes
 
-- 2026-04-29: status proposed → accepted. source [[spec-09-version-rollout]] status → decided (통째 흡수).
+- 2026-04-29: status proposed → accepted. source [[spec-09-version-rollout]] status → accepted (통째 흡수).
+- 2026-04-29: roadmap 의 plugin 슬러그 `planning` → `planner` 로 정정 ([[spec-02-directory-structure]] Plugin 슬러그 컨벤션 = 사람 역할 명사).
+- 2026-04-29: 정합성 검증 후 "버전 라벨 SSOT" 단락 추가. 타 ADR 들의 'v0.1' 표현이 다 차원이지만 같은 시점이라는 점 명시.

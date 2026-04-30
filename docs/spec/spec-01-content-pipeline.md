@@ -2,7 +2,7 @@
 id: spec-01
 title: Content Pipeline
 type: spec
-status: decided
+status: accepted
 created: 2026-04-28
 updated: 2026-04-29
 sources:

@@ -2,9 +2,9 @@
 id: spec-12
 title: Medi Docs Tooling
 type: spec
-status: draft
+status: accepted
 created: 2026-04-28
-updated: 2026-04-28
+updated: 2026-04-29
 sources:
   - "[[idea-03-user-docs-scaffold]]"
 owns: medi-docs-tooling
@@ -12,6 +12,8 @@ tags: [spec]
 aliases: []
 related_to:
   - "[[spec-10-medi-docs-scaffold]]"
+  - "[[spec-11-medi-docs-frontmatter]]"
+  - "[[adr-0008-medi-docs-scaffold]]"
 depends_on:
   - "[[spec-02-directory-structure]]"
   - "[[spec-06-base-hoisting]]"
@@ -96,9 +98,13 @@ idea-02 의 권한 모델은 harness 의 레이어를 세 가지로 구분한다
 ### `docs-validate` (사용자 배포본) 동작 상세
 
 - 훅 또는 skill 내부에서 자동 실행 (사용자가 직접 슬래시 커맨드로 호출하는 방식 아님).
-- 검증 항목: frontmatter 필수 필드 존재 여부 (`id`, `type`, 관계 어휘), 관계 링크 대상 파일 실존 여부.
-- `_map.md` 자동 갱신 (관계 그래프).
-- frontmatter 누락 → 차단. 본문 섹션 누락 → 경고만.
+- 검증 항목:
+  - frontmatter 필수 필드 존재 여부 (`id`, `type`, 관계 어휘).
+  - 관계 링크 대상 파일 실존 여부.
+  - **lineage 필수** ([[adr-0008-medi-docs-scaffold]] §6 D4) — 비-planning 문서가 `sources:` 최소 1개 보유. retrospective 만 다수 cross-cutting 허용.
+  - status enum (카테고리별 [[spec-11-medi-docs-frontmatter]] 위임).
+- `_map.md` 자동 갱신 (관계 그래프 + planning root 트리 뷰).
+- frontmatter 누락·D4 위반 → **차단**. 본문 섹션 누락 → 경고만.
 
 ## Interface
 
@@ -125,9 +131,11 @@ idea-02 의 권한 모델은 harness 의 레이어를 세 가지로 구분한다
 ### `docs-validate` (사용자 배포본)
 
 - 슬래시 커맨드 없음. 훅 또는 `/medi:version-cut` 내부에서 자동 호출.
-- 결과: 성공 (통과) / 경고 (본문 섹션 누락) / 차단 (frontmatter 누락 또는 관계 링크 불일치).
+- 결과: 성공 (통과) / 경고 (본문 섹션 누락) / 차단 (frontmatter 누락, 관계 링크 불일치, D4 lineage 위반).
 
 ## Open Questions
 
-- [ ] M1 — 도구 추가 트리거: `version-list` / `category-add` / `lint` 등 추가 도구의 도입 기준을 사용 패턴 어느 시점에서 판단할 것인가? (현재 YAGNI)
-- [ ] M3 — `--force` 도입 기준: cut 검증 실패 시 강제 박제가 실제로 필요한 운영 상황이 발생하면 `--force` 옵션 도입. 판단 기준 및 도입 조건은 운영 후 결정.
+- [ ] M1 — 도구 추가 트리거 (`version-list` / `category-add` / `lint` 등) — 운영 후 결정. 사용 패턴 측정 후 YAGNI 해제 시점 판단.
+- [ ] M3 — `--force` 도입 기준 — 운영 후 결정. cut 검증 실패 강제 박제가 실제 필요 상황 발생 시 도입.
+
+(두 OQ 모두 *운영 후 결정* 으로 의도적 deferral. 현재 spec accepted 상태에서 비차단.)

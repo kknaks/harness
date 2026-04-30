@@ -2,9 +2,9 @@
 id: spec-11
 title: Medi Docs Frontmatter
 type: spec
-status: draft
+status: accepted
 created: 2026-04-28
-updated: 2026-04-28
+updated: 2026-04-29
 sources:
   - "[[idea-03-user-docs-scaffold]]"
 owns: medi-docs-frontmatter
@@ -13,6 +13,7 @@ aliases: []
 related_to:
   - "[[spec-03-frontmatter-naming]]"
   - "[[spec-10-medi-docs-scaffold]]"
+  - "[[adr-0008-medi-docs-scaffold]]"
 ---
 
 # Medi Docs Frontmatter
@@ -60,7 +61,7 @@ idea-02 권한 모델에 따라 사용자 배포본 도구(`/medi:new`, `docs-va
 | 4 | 본문 스켈레톤 base 모델 | spec계(`Summary / Background / Goals / Design / Open Questions`) 와 adr계(`Context / Decision / Consequences`) 두 개. 9 카테고리는 아래 표에 따라 귀속 |
 | 5 | 카테고리별 추가 필드 최소화 | 의미상 꼭 필요한 것만 (예: `release-notes` 의 `version`/`date`). 불필요 필드 X |
 | 6 | `template.md` = 단일 진실 원천 | 카테고리마다 `template.md` 동봉. `/medi:new` 가 이를 복사. 양식 변경 시 `template.md` 만 수정 |
-| 7 | 검증 차등 | frontmatter 필드 누락 → `docs-validate` **차단**. 본문 섹션 누락 → **경고**만 (강제 X) |
+| 7 | 검증 차등 | frontmatter 필드 누락 → `docs-validate` **차단**. 비-planning 문서 `sources:` 누락 → **차단** ([[adr-0008-medi-docs-scaffold]] §6 D4). 본문 섹션 누락 → **경고**만 (강제 X) |
 
 ### 카테고리별 base 모델 귀속
 
@@ -80,7 +81,25 @@ idea-02 권한 모델에 따라 사용자 배포본 도구(`/medi:new`, `docs-va
 | `supersedes` | 이전 문서 대체 | `supersedes: ["[[adr-0003-db-choice]]"]` |
 | `depends_on` | 선행 의존 | `depends_on: ["[[spec-03-payment]]"]` |
 
+### 진입점·lineage 위계 ([[adr-0008-medi-docs-scaffold]] §7)
+
+frontmatter `sources:` 어휘로 위계를 표현한다. 디렉토리는 평면 9 카테고리, 위계 깊이는 `sources:` 그래프로만.
+
+| 카테고리 | sources 룰 | 비고 |
+|----------|-----------|------|
+| `planning` | 비어있어도 됨 (root). 외부 (비전·RFP 등) 자유 형식 허용 | **단일 진입점** |
+| `policy` | 최소 1개, 보통 `[[planning/...]]` | planning 자식 |
+| `plan` | 최소 1개, 보통 `[[planning/...]]` | planning 자식 |
+| `spec` | 최소 1개, 보통 `[[plan/...]]` | plan 파생 |
+| `adr` | 최소 1개, `[[spec/...]]` 또는 `[[plan/...]]` | 결정 lineage |
+| `test` | 최소 1개, 보통 `[[spec/...]]` | 검증 대상 |
+| `runbook` | 최소 1개, 보통 `[[spec/...]]` | 운영 대상 |
+| `release-notes` | 최소 1개, 보통 `[[plan/...]]` | cut 시점 산출 |
+| `retrospective` | 다수 cross-cutting (planning/plan/spec 등 여러 개) | 회고 대상 자유 |
+
+강제는 [[adr-0008-medi-docs-scaffold]] §6 D4 (`docs-validate` 차단) — 원칙 7 (검증 차등) 의 차단 항목에 포함.
+
 ## Open Questions
 
-- [ ] ADR 만 파일명 번호가 4자리(`adr-NNNN`)이고 나머지 카테고리는 2자리(`{category}-NN`)인 것이 일관성 원칙에 맞는가 — 모든 카테고리를 2자리로 통일할지, ADR 의 누적량을 고려해 4자리를 유지할지 명확한 근거가 필요하다.
-- [ ] 카테고리별 추가 필드(원칙 5)의 최소성 기준을 이 spec 이 정의해야 하는가, 아니면 각 카테고리별 구체 spec 에서 결정하는가 — 이 spec 은 원칙만 선언하므로 후자가 적합하나 경계를 명시할 필요가 있다.
+- [x] ADR 만 파일명 번호가 4자리(`adr-NNNN`)이고 나머지 카테고리는 2자리(`{category}-NN`)인 것이 일관성 원칙에 맞는가 — **결정 (2026-04-29, 옵션 B 채택)**: ADR 만 4자리 유지. 이유: harness 메타 ADR (`adr-0001`~`adr-0008`) 이 이미 4자리로 굳어있어 medi_docs 사용자 ADR 과 mental model 동일 + ADR 만 누적량이 길어지는 카테고리 (다른 카테고리는 한 프로젝트 라이프타임 100개 미만 → 2자리 충분) + NN 자릿수 = 카테고리 수명 신호.
+- [x] 카테고리별 추가 필드(원칙 5)의 최소성 기준을 이 spec 이 정의해야 하는가 — **결정 (2026-04-29, 후자 채택)**: spec-11 = 원칙만 (원칙 5: "꼭 필요한 것만"). 구체 필드 셋은 각 카테고리별 spec (해당 카테고리 `owns` 갖는 spec) 에서 결정. 경계 명시: 이 spec 은 *어휘·base 모델·검증 차등* 까지만, 카테고리 N 의 *어떤 status 값이 있는지* 는 카테고리 N spec.

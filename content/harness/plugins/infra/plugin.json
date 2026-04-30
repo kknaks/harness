@@ -1,0 +1,6 @@
+{
+  "name": "harness-infra",
+  "version": "0.0.0",
+  "description": "mediness infra role plugin (배포·CI/CD, k8s/Terraform, 시크릿 관리)",
+  "autoUpdate": true
+}

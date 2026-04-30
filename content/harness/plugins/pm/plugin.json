@@ -1,0 +1,6 @@
+{
+  "name": "harness-pm",
+  "version": "0.0.0",
+  "description": "mediness pm role plugin (일정·회의록·진행 보고)",
+  "autoUpdate": true
+}
