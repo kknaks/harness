@@ -1,0 +1,9 @@
+{
+  "role": "planner",
+  "version": "0.1.0",
+  "description": "기획서 / 정책 문서 / Scope 합의 / 요구사항 명세. 사용처 프로젝트의 기존 정책 / 도메인 어휘를 reference 로 로드, 부재 시 role-generic fallback (목적·입력·산출 골격).",
+  "skills": [],
+  "commands": [],
+  "hooks": [],
+  "depends_on": []
+}

@@ -1,0 +1,9 @@
+{
+  "role": "frontend",
+  "version": "0.1.0",
+  "description": "컴포넌트 분리 / 상태 관리 / 접근성 / 번들 사이즈. 사용처 프로젝트의 디자인 시스템·라우팅·테스트 컨벤션을 reference 로 로드, 부재 시 role-generic fallback (관심사 분리·일반 접근성).",
+  "skills": [],
+  "commands": [],
+  "hooks": [],
+  "depends_on": []
+}

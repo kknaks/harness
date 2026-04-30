@@ -1,0 +1,9 @@
+{
+  "role": "qa",
+  "version": "0.1.0",
+  "description": "테스트 전략 / 회귀 분석 / 품질 게이트. 사용처 프로젝트의 테스트 프레임워크·CI 게이트를 reference 로 로드, 부재 시 role-generic fallback (테스트 피라미드·회귀 우선순위).",
+  "skills": [],
+  "commands": [],
+  "hooks": [],
+  "depends_on": []
+}

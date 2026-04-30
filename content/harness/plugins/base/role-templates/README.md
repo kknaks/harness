@@ -4,16 +4,21 @@
 
 ## 사용 가능한 role
 
-| role | 포함 SKILL | manifest 위치 |
-|------|------------|---------------|
-| `backend` | `code-review`, `test-design` | [`backend/role.json`](backend/role.json) |
-| `frontend` | _(v0.1 미박. v0.2+)_ | _(미작성)_ |
-| `planner` | _(v0.1 미박. v0.2+)_ | _(미작성)_ |
-| `pm` | _(v0.1 미박. v0.2+)_ | _(미작성)_ |
-| `qa` | _(v0.1 미박. v0.2+)_ | _(미작성)_ |
-| `infra` | _(v0.1 미박. v0.2+)_ | _(미작성)_ |
+| role | 포함 SKILL (v0.1) | depends_on | manifest |
+|------|-------------------|-----------|----------|
+| `backend` | `code-review`, `test-design` | _(none)_ | [`backend/role.json`](backend/role.json) |
+| `frontend` | _(빈 role — v0.2+ 누적)_ | _(none)_ | [`frontend/role.json`](frontend/role.json) |
+| `fullstack` | _(자체 SKILL 없음)_ | `backend`, `frontend` | [`fullstack/role.json`](fullstack/role.json) |
+| `planner` | _(빈 role — v0.2+ 누적)_ | _(none)_ | [`planner/role.json`](planner/role.json) |
+| `pm` | _(빈 role — v0.2+ 누적)_ | _(none)_ | [`pm/role.json`](pm/role.json) |
+| `qa` | _(빈 role — v0.2+ 누적)_ | _(none)_ | [`qa/role.json`](qa/role.json) |
+| `infra` | _(빈 role — v0.2+ 누적)_ | _(none)_ | [`infra/role.json`](infra/role.json) |
 
 각 role 의 정확한 description / skill 목록은 manifest (`<role>/role.json`) 가 SSOT.
+
+**`fullstack` 의 동작** — 자체 skill 없음. `depends_on: ["backend", "frontend"]` 로 두 role 의 skills 를 자동 흡수. `init.sh` 가 transitive expansion 으로 *backend SKILL + frontend SKILL* 을 복사 (dedup). 사용자는 단일 명령 (`/harness:init fullstack`) 으로 풀스택 셋업.
+
+빈 role 은 `init` 시 SKILL 0개 복사 — 단, `medi_docs/` 9 카테고리 + 본 plugin 의 base hooks 는 박힘 (역할 무관 공통 자산).
 
 ## 호출
 

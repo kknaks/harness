@@ -1,0 +1,12 @@
+{
+  "role": "fullstack",
+  "version": "0.1.0",
+  "description": "frontend + backend 통합 — 풀스택 제품 단위. depends_on 으로 두 role 의 SKILL 을 자동 흡수. 단일 SKILL 안 박음 (조합 의도만 표명).",
+  "skills": [],
+  "commands": [],
+  "hooks": [],
+  "depends_on": [
+    "backend",
+    "frontend"
+  ]
+}

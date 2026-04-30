@@ -1,0 +1,9 @@
+{
+  "role": "pm",
+  "version": "0.1.0",
+  "description": "일정 / 우선순위 / 릴리즈 트래킹 / 의존성 그래프. 사용처 프로젝트의 진행 도구 (Jira·Linear 등) 메타를 reference 로 로드.",
+  "skills": [],
+  "commands": [],
+  "hooks": [],
+  "depends_on": []
+}

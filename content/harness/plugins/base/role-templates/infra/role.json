@@ -1,0 +1,9 @@
+{
+  "role": "infra",
+  "version": "0.1.0",
+  "description": "배포 / 인프라 / 모니터링 / 보안 운영. 사용처 프로젝트의 deploy 파이프라인·observability 를 reference 로 로드, 부재 시 role-generic fallback (12-factor·관찰가능성 일반 원칙).",
+  "skills": [],
+  "commands": [],
+  "hooks": [],
+  "depends_on": []
+}

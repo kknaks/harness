@@ -54,6 +54,34 @@ PROJECT_DIR="$(pwd)"
 TARGET="$PROJECT_DIR/.claude"
 mkdir -p "$TARGET/skills"
 
+# depends_on transitive expansion. visited set 으로 중복·cycle 자연 차단.
+EXPANDED=()
+visit_role() {
+  local role="$1"
+  for r in "${EXPANDED[@]:-}"; do
+    [[ "$r" == "$role" ]] && return
+  done
+  EXPANDED+=("$role")
+  local manifest="$ROLE_TEMPLATES/$role/role.json"
+  if [[ -f "$manifest" ]]; then
+    local deps
+    deps=$(python3 -c "import json; d=json.load(open('$manifest')); print(' '.join(d.get('depends_on', []) or []))" 2>/dev/null || echo "")
+    for dep in $deps; do
+      visit_role "$dep"
+    done
+  fi
+}
+for role in "${ROLES[@]}"; do
+  visit_role "$role"
+done
+# expand 결과로 ROLES 교체. 사용자 입력 순서는 무시 (depends-first 자연 정렬은
+# 의미 없음 — 모든 role 의 skills 가 별 디렉토리이므로 충돌 없음).
+ROLES=("${EXPANDED[@]}")
+if [[ ${#EXPANDED[@]} -gt 1 ]]; then
+  echo "Resolved roles (incl. depends_on): ${EXPANDED[*]}"
+  echo ""
+fi
+
 declare -i copied=0 skipped=0
 
 copy_skill() {
