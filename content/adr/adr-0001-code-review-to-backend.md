@@ -6,11 +6,11 @@ status: proposed
 date: 2026-04-30
 sources:
   - "[[wiki-01-code-review-pattern]]"
-related_to:
-  - "[[adr-0002-test-design-to-backend]]"
 tags: [adr]
 categories: [code-review]
 role: backend
+related_to:
+  - "[[adr-0002-test-design-to-backend]]"
 aliases: []
 ---
 
@@ -18,68 +18,56 @@ aliases: []
 
 ## Context
 
-`wiki-01-code-review-pattern` 은 두 층으로 합성된 지식 노드:
-- **공용 골격 (project-agnostic)** — 4단계 리뷰 프로세스, 변경 규모 임계값(400줄), 심각도 5분류표, 마크다운 리포트 포맷, 줄 단위 일반 점검 항목
-- **프로젝트 의존 슬롯** — NEXUS 백엔드 컨벤션 (Layer Objects, L1/L2/L3 검증, Router/Service/Repository 룰)
+승격 원본: `content/wiki/wiki-01-code-review-pattern.md` (sources: `sources-01-code-review`, NEXUS 백엔드 `/review` SKILL 박제).
 
-원본 SKILL 의 사용 환경 = NEXUS 백엔드 (`packages/admin-api`). 슬롯이 백엔드 컨벤션 문서(`docs/common/layer-objects.md` 등)를 trigger 시 reference 로 로드함.
+wiki-01 은 두 층으로 합성됨:
+- **공용 골격 (project-agnostic)** — 4단계 리뷰 프로세스 / 400줄 임계값 / 심각도 5분류 (🔴🟡🟢💡🎉) / 줄단위 점검 (언어 무관·언어 특화 분리) / 마크다운 리포트 포맷 (이슈 ID + Convention 출처 + Before/After).
+- **프로젝트 의존 슬롯 (NEXUS 백엔드 사례)** — Layer Objects 4객체 / Validator 3계층 / Router-Service-Repository 룰. `docs/common/layer-objects.md`, `docs/common/layer-design.md`, `CLAUDE.md` 를 reference 로 의존.
 
-[[adr-0011-base-hoisting]] §사전 분할 X — 첫 입주는 분야 plugin, 운영 중 중복 발생 시 base 로 hoisting. 본 결정은 그 패턴의 *콘텐츠 레이어 첫 적용 사례*.
+본 ADR 의 결정 단위 = *이 자산이 backend role plugin 에 어떻게 입주하는가*. ADR-0011 §1 base/role hoisting 모델 위에서 backend role facet 매핑.
 
 ## Decision
 
-`wiki-01-code-review-pattern` 자산을 **`content/harness/plugins/backend/skills/code-review/`** 에 입주시킨다.
-
-- **SKILL 본문 = wiki 의 *공용 골격* 만** (project-agnostic): 4단계 리뷰 프로세스, 심각도 5분류, 400줄 임계, 언어 무관/특화 분리, 마크다운 리포트 포맷.
-- **NEXUS 백엔드 슬롯은 plugin 본문에 박지 않는다.** (promote-docs SKILL §자산 분리 룰) 처리 모델:
-  - (a) **reference 로드** — 사용처 프로젝트의 `docs/common/*.md`, `CLAUDE.md` 를 SKILL trigger 시 로드.
-  - (b) **role-generic fallback** — reference 부재 시 SKILL 본문에 *generic 백엔드 원칙* (계층 분리·의존 방향·검증 책임 분리 일반론 수준). NEXUS-specific Layer Objects 4객체 / L1-L3 / Router 4파라미터 룰 등은 박지 않음.
-- 슬래시 명령 `/review` 본문 보존 (트리거 + 컨벤션 reference 로드 지시).
-- NEXUS 컨벤션 슬롯이 필요한 사용처는 별도 분기 ADR (`adr-NNNN-nexus-backend-review`) 또는 별도 plugin (`nexus-backend/`) 로 분리.
+backend role plugin 의 `code-review` SKILL 본문에는 **공용 골격만 박는다**. NEXUS 등 프로젝트 의존 슬롯은 SKILL trigger 시 사용처 프로젝트의 `docs/common/*.md` + `CLAUDE.md` 를 **reference 로 로드**하고, 해당 reference 부재 시 *role-generic fallback* (MVC/계층화 일반 원칙·역방향 의존 금지·BaseRepository 류 일반 패턴) 으로 동작한다. 특정 컨벤션 채택 사례가 누적되면 본 ADR 과 병렬로 분기 ADR (`adr-NNNN-{convention}-code-review-to-backend`) 을 추가하지 supersede 하지 않는다.
 
 ## Alternatives Considered
 
 | 후보 | 채택 안 한 이유 |
 |------|------------------|
-| (a) **base/skills/code-review/ 직접 입주** (사전 hoisting) | 추측 분할 — [[adr-0011-base-hoisting]] §사전 분할 X 위반. 다른 분야 SKILL 추가 전 실제 중복 발생 X. 가설 단계 |
-| (b) **공용 골격 + NEXUS 슬롯 *합쳐서* role plugin 본문 박기** | wiki 두 층 분리 무효화. backend role plugin 의 *role-generic* 의미 자기모순 (promote-docs SKILL §자산 분리 룰 §금지). 다른 백엔드 프로젝트 도입 시 NEXUS 슬롯 박혀 있어 이식 비용 ↑ |
-| (c) **공용 골격만 role plugin 입주 + NEXUS 슬롯 reference / 분기 ADR 분리 (현재 ✓)** | wiki 두 층 분리 보존. backend plugin 은 role-generic 유지. NEXUS 외 백엔드 컨벤션 도입 시 분기 ADR 또는 별도 plugin 으로 자연 확장 |
-| (d) **NEXUS 특화 plugin 신설** (예: `nexus-backend/`) — 단독 채택 | 공용 골격까지 NEXUS plugin 에 박히면 다른 백엔드 프로젝트가 골격 못 받음. (c) 와 결합해 *공용 골격 = backend / NEXUS 슬롯 = nexus-backend* 분리는 운영 사례 누적 시 자연스러운 다음 단계 |
-| (e) **wiki-01 + wiki-02 묶어 1 ADR** (정책 ADR) | atomic 단위 위반 — 자산 매핑은 자산별 분리 ([[adr-0003-content-pipeline]] §wiki vs adr 단계). 정책 추출은 N개 매핑 굳을 때 별 정책 ADR |
+| 공용 골격 + NEXUS 슬롯 *합쳐서* backend plugin 본문에 박기 | wiki 두 층 분리 무효화. backend role plugin 의 *role-generic* 의미 자기모순 (promote-docs SKILL §자산 분리 룰 §금지). 다른 프로젝트 이식 0 |
+| 처음부터 분기 ADR (`nexus-code-review-to-backend`) 만 박고 본 ADR 생략 | NEXUS 채택 사례 1건만 있는 현 시점에 분기는 과조숙. role-generic 본 ADR 부재 시 다른 프로젝트가 들어올 때 referent 가 없음 |
+| 별도 convention plugin (`nexus-backend/`) | role plugin 모델과 분리되는 결정 — ADR-0011 §3 hoisting 영역, 본 ADR scope 외 |
+| base role 로 hoisting | code-review topic 이 frontend / qa 등 다른 role 에서도 채택된 사례 0. ADR-0011 §3 hoisting 트리거 (3 role+ 분포) 미달 |
 
 ## Implementation Path
 
 | Action | 누가 | 언제 | 의존 / 산출 |
 |--------|------|------|--------------|
-| `content/harness/plugins/backend/skills/code-review/SKILL.md` 작성 — **공용 골격만** (4단계·심각도 5종·400줄 임계·언어 무관/특화 분리·리포트 포맷). NEXUS Layer Objects/L1-L3/Router 룰 박지 않음 | 메인테이너 | v0.1 release 전 | [[wiki-01-code-review-pattern]] §공용 골격 |
-| SKILL trigger 가이드 — 사용처 프로젝트의 `docs/common/*.md`, `CLAUDE.md` 를 reference 로 로드. 부재 시 *role-generic fallback* (계층 분리·의존 방향 일반론) 작동 | 메인테이너 | v0.1 release 전 | — |
-| harness skill 안내에 *사용자 프로젝트 컨벤션 reference 채우기* 가이드 추가 | 메인테이너 | v0.2 release 전 | [[adr-0006-onboarding-skill]] |
-| NEXUS 컨벤션 슬롯이 명시적으로 필요한 사용처 발견 시 분기 ADR `adr-NNNN-nexus-backend-review` 또는 별도 plugin `nexus-backend/` 신설 | 메인테이너 | 사례 발생 시 | promote-docs SKILL §자산 분리 룰 (b)/(c) |
-| 다른 분야 plugin (frontend/QA 등) 에 동일 *공용 골격* SKILL 추가 시 — base 로 hoist 검토 | 운영 후 | v0.2+ | [[adr-0011-base-hoisting]] §3 트리거 |
+| backend plugin `code-review` SKILL 본문 작성 — 공용 골격 5요소 (4단계 / 임계값 / 심각도 / 줄단위 분리 / 리포트 포맷) | 메인테이너 | v0.1 | wiki-01 §공용 골격 → SKILL.md |
+| SKILL trigger 시 reference 로드 메커니즘 박기 — `docs/common/*.md` + `CLAUDE.md` 우선, 부재 시 fallback | 메인테이너 | v0.1 | adr-0007 skill-authoring rules §lazy-load |
+| role-generic fallback 작성 (MVC·계층화 일반 원칙) | 메인테이너 | v0.1 | SKILL.md 내 fallback 섹션 |
+| 두 번째 채택 사례 발생 시 분기 ADR 트리거 검토 | 메인테이너 | 운영 누적 후 | 본 ADR Notes append |
+| `adr-to-harness.sh` 로 backend plugin 자산 입주 + Notes lineage | 메인테이너 | v0.1 패키징 | spec-09 release flow |
 
 ## Consequences
 
 **Pros**
-- 백엔드 기여자가 `backend` plugin 1개 설치로 `/review` 사용 가능 — 분야별 plugin 분리 모델 ([[adr-0011-base-hoisting]]) 에 충실
-- **role plugin = role-generic** 의미 보존 — NEXUS 외 백엔드 프로젝트 (Spring/DDD/Rails 등) 도 같은 plugin 그대로 도입 가능
-- 공용 골격이 분야 plugin 에 박혀 있어 다른 분야 plugin 에 hoisting 자연 — base 이동 시 골격 그대로
-- wiki 의 두 층 분리가 plugin 단계까지 보존됨 (promote-docs SKILL §자산 분리 룰 정렬)
+- backend plugin 이 *project-agnostic* 으로 이식 가능 — NEXUS 외 프로젝트는 자기 `docs/common/*` 만 박으면 채택
+- wiki 두 층 분리가 plugin 단계까지 보존 → ADR-0011 hoisting 모델 정합
+- 분기 ADR 패턴이 열려있어 컨벤션-specific 풍부도를 잃지 않음 (병렬 채택)
 
 **Cons**
-- reference 부재 + role-generic fallback 만으로는 NEXUS Layer Objects 같은 *세부 컨벤션 강제* 가 빈약 — NEXUS 사용처는 분기 ADR 또는 별도 plugin 으로 보강 필요
-- 공용 골격이 backend plugin 안에 박혀 있는 동안 frontend·QA 등이 동일 골격을 별도로 만들면 중복 발생 → [[adr-0011-base-hoisting]] §3 hoisting 트리거 (2+ role plugin 에 복사) 충족 시 base 로 이동
+- 첫 사용처가 NEXUS 외 프로젝트인 경우 fallback 으로 동작 → 풍부도 떨어짐
+- SKILL 본문 (공용 골격) vs reference (프로젝트 의존) 경계 운영 부담 — 새 점검 항목 추가 시 어느 층인지 매번 판단 필요
 
 **Follow-ups**
-- [ ] 다른 분야 plugin (frontend/qa) 코드 리뷰 SKILL 추가 시 공용 골격 hoisting 결정 (base 로 이동)
-- [ ] NEXUS 컨벤션 슬롯이 필요한 사용처 발견 시 분기 ADR `adr-NNNN-nexus-backend-review` 또는 별도 plugin 신설
-- [ ] role-generic fallback 본문 분량이 SKILL 500자 초과 시 reference/ 분리 ([[adr-0007-skill-authoring-rules]] §1)
+- [ ] NEXUS 외 백엔드 프로젝트 채택 사례 1건 발생 시 분기 ADR 필요성 재평가
+- [ ] frontend / qa role 에 같은 `code-review` topic ADR 가 생기면 ADR-0011 §3 hoisting 후보 (base 로)
+- [ ] reference 로드 메커니즘이 `test-design-to-backend` (adr-0002) 와 중복되면 backend plugin 공통 hook 으로 추출
 
 ## Notes
 
 _(시간순 append: status 전이, 적용 결과, 후속 학습, 관련 wiki 추가 등)_
 
-- 2026-04-30: scaffold 생성. status=proposed. e2e 사이클 콘텐츠 ADR 첫 사례.
-- 2026-04-30: Decision 본문 patch — 초안은 "공용 골격 + NEXUS 슬롯 *합쳐서* backend plugin 본문 박음" 으로 role plugin 의 role-generic 의미와 자기모순. promote-docs SKILL §자산 분리 룰 신규 박은 후 본 ADR Decision 을 *공용 골격만 plugin / NEXUS 슬롯은 reference·분기 ADR·별도 plugin* 모델로 재정의.
-- **hoisting 가설** — 다른 분야 plugin (frontend/QA 등) 에 동일 *공용 골격* SKILL 이 추가되어 ADR-0011 §3 트리거 충족 시: 공용 골격을 `base/skills/code-review-pattern/` 으로 hoist + 분야별 fallback 만 분야 plugin 에 잔류.
-- **슬롯 분기 가설** — NEXUS 등 특정 컨벤션 채택 사례 누적 시 별도 ADR `adr-NNNN-{convention}-{role}` 또는 별도 plugin (`nexus-backend/`) 으로 분기. supersede 가 아니라 *병렬 채택* (사용 프로젝트별 선택).
-- 자매 ADR: [[adr-0002-test-design-to-backend]] — 동일 결정 모델 (1 wiki → 1 plugin atomic, 공용 골격만 plugin 본문, project 슬롯 분리) 적용.
+- 2026-04-30 — proposed. wiki-01 → backend role 매핑 결정. 자매 ADR: `adr-0002-test-design-to-backend` (같은 패턴, test-design topic).
+- 2026-04-30: applied to plugin `backend` (content/harness/plugins/backend/)
