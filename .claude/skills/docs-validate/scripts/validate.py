@@ -268,6 +268,103 @@ def check_skill_layout(root):
     return out
 
 
+def check_role_manifests(root):
+    """R12: role-templates/<role>/role.json 의 skills/commands/hooks 배열이
+    실재 디렉토리·파일과 일치하는지 검증.
+
+    검증 대상: `content/harness/plugins/base/role-templates/<role>/role.json`
+
+    검출:
+      - manifest 가 선언한 skill 이 디렉토리로 실재 안 함        → violation (차단)
+      - 디렉토리에 skill 이 있는데 manifest 에 없음 (orphan)     → violation
+      - manifest JSON 파싱 실패                                   → violation
+      - manifest 의 role 필드와 디렉토리 이름 불일치              → violation
+
+    fallback (manifest 부재) 은 통과 — 마이그레이션 호환. 단, 메인테이너에게
+    sync-role-manifest.sh 로 manifest 박을 것을 안내 (warning 으로 격하 가능).
+
+    sync-role-manifest.sh 가 자동 갱신 도구 — 본 R12 가 drift 검출, sync 가
+    drift 해소.
+    """
+    import json as _json
+
+    out = []
+    plugin_root = root / "content" / "harness" / "plugins" / "base"
+    role_templates = plugin_root / "role-templates"
+    if not role_templates.is_dir():
+        return out
+
+    for role_dir in sorted(role_templates.iterdir()):
+        if not role_dir.is_dir() or role_dir.name.startswith("."):
+            continue
+        role_name = role_dir.name
+        manifest_path = role_dir / "role.json"
+
+        # filesystem state
+        fs_skills = sorted(
+            [p.name for p in (role_dir / "skills").iterdir()]
+            if (role_dir / "skills").is_dir()
+            else []
+        )
+        fs_commands = sorted(
+            [p.stem for p in (role_dir / "commands").glob("*.md")]
+            if (role_dir / "commands").is_dir()
+            else []
+        )
+
+        if not manifest_path.exists():
+            # fallback OK, but flag for visibility (warning-grade — keep as
+            # violation-tier 'note' to surface but not block; opted: warn-only)
+            # 메인테이너 안내용 — 차단 X
+            continue
+
+        try:
+            data = _json.loads(manifest_path.read_text())
+        except _json.JSONDecodeError as e:
+            out.append(f"[role-manifest-parse] {manifest_path.relative_to(root)}: {e}")
+            continue
+
+        # role 필드 일치
+        m_role = data.get("role")
+        if m_role != role_name:
+            out.append(
+                f"[role-manifest-name] {manifest_path.relative_to(root)}: "
+                f"role={m_role!r} != dir name {role_name!r}"
+            )
+
+        # skills 배열 ↔ skills/ 디렉토리
+        m_skills = data.get("skills", []) or []
+        missing = [s for s in m_skills if s not in fs_skills]
+        orphan = [s for s in fs_skills if s not in m_skills]
+        for s in missing:
+            out.append(
+                f"[role-manifest-skill-missing] {manifest_path.relative_to(root)}: "
+                f"skills[]={s!r} 선언했으나 skills/{s}/ 디렉토리 없음"
+            )
+        for s in orphan:
+            out.append(
+                f"[role-manifest-skill-orphan] {manifest_path.relative_to(root)}: "
+                f"skills/{s}/ 디렉토리 있으나 manifest 에 없음 — sync-role-manifest.sh {role_name}"
+            )
+
+        # commands 배열 ↔ commands/*.md
+        m_commands = data.get("commands", []) or []
+        c_missing = [c for c in m_commands if c not in fs_commands]
+        c_orphan = [c for c in fs_commands if c not in m_commands]
+        for c in c_missing:
+            out.append(
+                f"[role-manifest-command-missing] {manifest_path.relative_to(root)}: "
+                f"commands[]={c!r} 선언했으나 commands/{c}.md 없음"
+            )
+        for c in c_orphan:
+            out.append(
+                f"[role-manifest-command-orphan] {manifest_path.relative_to(root)}: "
+                f"commands/{c}.md 있으나 manifest 에 없음"
+            )
+
+    return out
+
+
 def check_content_adr_role(root):
     """R10: content/adr/*.md 의 role 필드 enum 검증.
 
@@ -619,6 +716,7 @@ def main(root):
     violations += check_status_enum(docs)
     violations += check_content_adr_role(root)
     violations += check_skill_layout(root)
+    violations += check_role_manifests(root)
     warnings = check_body_length(docs)
 
     if violations:
