@@ -84,15 +84,51 @@ for role in "${ROLES[@]}"; do
     echo "Available: ${avail[*]}" >&2
     exit 2
   fi
-  echo "Role: $role"
-  if [[ -d "$src/skills" ]]; then
-    for skill in "$src/skills"/*/; do
-      [[ -d "$skill" ]] || continue
-      name=$(basename "$skill")
-      copy_skill "$skill" "$TARGET/skills/$name"
-    done
+  # role.json manifest 우선 — 명시적 skill 목록. 부재 시 fallback (skills/* 전체 복사).
+  manifest="$src/role.json"
+  if [[ -f "$manifest" ]]; then
+    desc=$(python3 -c "import json; d=json.load(open('$manifest')); print(d.get('description', ''))")
+    echo "Role: $role  ($desc)"
+    skills_list=$(python3 -c "import json; d=json.load(open('$manifest')); print(' '.join(d.get('skills', [])))")
+    if [[ -z "$skills_list" ]]; then
+      echo "  (manifest 의 skills[] 비어있음 — 복사할 자산 없음)"
+    else
+      for name in $skills_list; do
+        if [[ ! -d "$src/skills/$name" ]]; then
+          echo "  ✗ manifest 가 선언한 skill 이 없음: $src/skills/$name" >&2
+          exit 3
+        fi
+        copy_skill "$src/skills/$name" "$TARGET/skills/$name"
+      done
+    fi
+    # commands 도 manifest 가 선언하면 복사 (v0.2 — backend 는 v0.1 에 미박)
+    if python3 -c "import json,sys; d=json.load(open('$manifest')); sys.exit(0 if d.get('commands') else 1)" 2>/dev/null; then
+      mkdir -p "$TARGET/commands"
+      cmds_list=$(python3 -c "import json; d=json.load(open('$manifest')); print(' '.join(d.get('commands', [])))")
+      for cmd in $cmds_list; do
+        if [[ -f "$src/commands/$cmd.md" ]]; then
+          if [[ -e "$TARGET/commands/$cmd.md" ]] && ! $FORCE; then
+            echo "  ! skip (exists): .claude/commands/$cmd.md"
+            skipped=$((skipped + 1))
+          else
+            cp "$src/commands/$cmd.md" "$TARGET/commands/$cmd.md"
+            echo "  → .claude/commands/$cmd.md"
+            copied=$((copied + 1))
+          fi
+        fi
+      done
+    fi
+  else
+    echo "Role: $role  (no manifest — fallback: copying all skills/*)"
+    if [[ -d "$src/skills" ]]; then
+      for skill in "$src/skills"/*/; do
+        [[ -d "$skill" ]] || continue
+        name=$(basename "$skill")
+        copy_skill "$skill" "$TARGET/skills/$name"
+      done
+    fi
   fi
-  # role-specific hooks (있으면 .claude/hooks/ 에 추가)
+  # role-specific hooks (manifest 무관 — 있으면 .claude/hooks/ 에 추가)
   if [[ -d "$src/hooks" ]]; then
     mkdir -p "$TARGET/hooks"
     cp -R "$src/hooks/." "$TARGET/hooks/" 2>/dev/null || true

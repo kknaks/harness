@@ -33,8 +33,16 @@ if [[ -d "$ROLE_TEMPLATES" ]]; then
   for d in "$ROLE_TEMPLATES"/*/; do
     [[ -d "$d" ]] || continue
     role=$(basename "$d")
-    n_skills=$(find "$d/skills" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
-    printf "  - %-12s (%s skill%s)\n" "$role" "$n_skills" "$([ "$n_skills" -eq 1 ] && echo "" || echo "s")"
+    manifest="$d/role.json"
+    if [[ -f "$manifest" ]]; then
+      desc=$(python3 -c "import json; print(json.load(open('$manifest')).get('description', '(no description)'))" 2>/dev/null || echo "(manifest 파싱 실패)")
+      skills=$(python3 -c "import json; print(', '.join(json.load(open('$manifest')).get('skills', [])) or '(none)')" 2>/dev/null || echo "?")
+      printf "  - %-12s : %s\n" "$role" "$desc"
+      printf "    skills: %s\n" "$skills"
+    else
+      n_skills=$(find "$d/skills" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
+      printf "  - %-12s (no manifest, %s skill%s — fallback)\n" "$role" "$n_skills" "$([ "$n_skills" -eq 1 ] && echo "" || echo "s")"
+    fi
   done
 else
   echo "  (role-templates/ 없음 — plugin 가 deprecated 됐거나 잘못 설치됨)"
