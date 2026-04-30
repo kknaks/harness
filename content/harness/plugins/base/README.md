@@ -23,8 +23,8 @@ mediness 사내 공용 하네스의 **base plugin**. 모든 role plugin (planner
 
 ## 사용자 흐름
 
-1. `claude plugin marketplace add github:medisolve/harness`
-2. `claude plugin install harness-base` (필요 role plugin 도 함께)
+1. `claude plugin marketplace add github:kknaks/harness` (v0.1 dogfood — 사내 mediness 배포 전 임시 origin. 정식 origin 은 v1.0 cutover 시점에 결정)
+2. `claude plugin install harness-base` (필요 role plugin 도 함께 — 예: `claude plugin install harness-backend`)
 3. `/harness` skill 호출 → 상태 확인 + 처음 셋업 분기 → `medi_docs/current/` 9 카테고리 scaffold
 
 ## 더 보기

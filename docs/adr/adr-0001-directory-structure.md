@@ -130,4 +130,5 @@ mediness 는 두 개의 서로 다른 레이어를 동시에 운영해야 한다
 
 - 2026-04-28: status proposed → accepted. source spec-02 status → accepted (통째 흡수 패턴).
 - 2026-04-29: 정합성 검증 후 spec-02 의 트리·Plugin 슬러그 컨벤션·Plugin 내부 표준·영역 분리·Role plugin 책임 예시·marketplace.json 부속결정을 본 ADR 본문으로 흡수. spec-02 는 lineage stub 으로 축소 (status accepted 정합화). 이전엔 spec-02 가 살아있는 SSOT 로 운영되었으나 [[adr-0003-content-pipeline]] §관계 규칙 (수직 단방향 승격) 위반 — 결정 SSOT 는 흡수 ADR 가 가짐.
+- 2026-04-30: marketplace.json 위치 정정 (v0.1 dogfood). `content/harness/.claude-plugin/marketplace.json` → `.claude-plugin/marketplace.json` (repo root). Claude Code 의 plugin marketplace 컨벤션이 `.claude-plugin/marketplace.json` 을 *repo root* 에서 찾으므로 `claude plugin marketplace add github:<repo>` 로 install 하려면 root 위치가 필수. source 경로는 `./plugins/<n>` → `./content/harness/plugins/<n>` 로 갱신. 5단 파이프라인 (`content/harness/` 가 distribution 단계) 구조는 보존 — repo root 의 marketplace.json 은 *distribution descriptor* (어디서 plugin 자산을 찾는지) 만 박힘. v0.1 release 의 origin 은 임시로 `kknaks/harness` (사내 mediness 배포 전), v1.0 cutover 시점에 정식 origin 결정 (base/README.md §사용자 흐름 박제).
 

@@ -1,6 +1,8 @@
 # Harness Rules
 
-> 스킬이 강제하는 룰셋. SKILL.md (사용자 시점 진입점) 가 trigger 시 로드 → 본 rules.md 는 시나리오 실행 시 지연 로드 ([[adr-0007-skill-authoring-rules]] §1).
+> 스킬이 강제하는 룰셋·정책·금지 사항. SKILL.md (사용자 시점 진입점) 가 trigger 시 로드 → 본 rules.md 는 실제 룰 적용 시점에 지연 로드 ([[adr-0007-skill-authoring-rules]] §1).
+>
+> **rules.md 의 책임 (본질·SSOT)**: *무엇을 강제하는가 / 왜 / 위반 시 어떻게 되는가*. 도메인 룰 본문·정책·금지·예외 처리. 운영 단계 (Pre-flight / Action / Post-flight 표) 는 `checklist.md` 가 SSOT — rules 에는 박지 않음 ([[adr-0007-skill-authoring-rules]] §1 SKILL.md vs rules.md vs checklist.md 분리). 같은 정보가 양쪽에 박히면 표류 — 한쪽만 SSOT.
 
 ## 6 시나리오 분기 ([[adr-0006-onboarding-skill]] §3)
 
