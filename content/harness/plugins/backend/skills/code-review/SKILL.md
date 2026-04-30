@@ -32,6 +32,16 @@ allowed_tools: [Read, Edit, Bash]
 
 ## 보안 고려사항
 
-- `allow_commands` 필요 X — read 만 (변경된 파일·diff·컨벤션 reference 읽기). 코드 수정은 사용자 손에 남김.
-- 동적 입력 (파일 경로·도메인 slug) 은 `printf %q` 또는 quoted expansion (`"$VAR"`) 으로 인용. `../` 탈출 / 절대 경로 / 심볼릭 검증.
-- `.env` / `secrets/` / token 파일은 review 대상에서 제외. 출력에 시크릿 포함 시 `***` 마스킹.
+- `allow_commands` 선언 이유: (위험 명령 호출 시 — 없으면 "X — read/write only")
+- 동적 입력 ($VAR / CLI 인자 / 파일 경로) 처리: `source ../scripts/sanitize.sh` 또는 인용 규칙 (`"$VAR"`/`printf %q`).
+- 시크릿 차단 + 출력 마스킹 — 아래 패턴은 read 대상에서 제외하고, 출력에 잡히면 `***` 으로 마스킹.
+
+| 카테고리 | 경로/이름 패턴 | 정규식 (예) |
+|----------|----------------|-------------|
+| dotenv | `.env`, `.env.*` (`.local`, `.production` 등) | `(^|/)\.env(\..+)?$` |
+| 시크릿 디렉토리 | `secrets/`, `secret/`, `credentials/` | `(^|/)(secrets?|credentials)/` |
+| 토큰 파일 | `*token*`, `*apikey*`, `*api_key*` | `(token|api[_-]?key)` (대소문자 무시) |
+| 키 자료 | `*.pem`, `*.key`, `*.p12`, `*.pfx`, `id_rsa*` | `\.(pem|key|p12|pfx)$\|^id_rsa` |
+| 인증 헤더값 | `Authorization: Bearer ...`, `x-api-key: ...` | `(Bearer\s+\S+|x-api-key:\s*\S+)` |
+
+- 위 패턴 매치 시: 입력 거부 (read 단계) + 출력 발견 시 `***` 치환. 사용처 환경별 추가 패턴은 본 § 에 보강.

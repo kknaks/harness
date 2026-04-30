@@ -65,6 +65,8 @@ aliases: []
 
 이슈 ID 부여(B-/I-/N-) + Convention 출처 명시 + Before/After 코드는 reproducibility 의 핵심.
 
+**이슈 ID scope** — *단일 리포트 내 unique* 가 표준. PR·도메인·세션 차원 누적은 외부 트래킹 시스템에 위임 (이 wiki 의 SKILL 패턴은 *리포트 단위 부여*). 카운터는 매 리뷰마다 1부터 — 같은 PR 의 재리뷰가 `B-001` 을 다시 부여해도 무관 (두 리포트가 별 인스턴스). prefix `B`/`I`/`N`/`S` = 심각도 (blocking/important/nit/suggestion). 외부 추적이 필요하면 `{file}#{report-date}#{ID}` 같은 합성 키로 위임.
+
 ### 프로젝트 의존 슬롯 (예시: NEXUS 백엔드)
 
 같은 골격 위에 *프로젝트별 컨벤션* 만 슬롯에 끼운다 — `sources-01-code-review` 의 NEXUS 사례:

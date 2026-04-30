@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Usage: create-skill.sh <skill-name> <location> [description]
 #
-# 4 필수 자산 (SKILL.md + rules.md + examples/sample.md + checklist.md) 자동 박는
+# 4 필수 자산 (SKILL.md + rules.md + examples/sample-no-reference.md + checklist.md) 자동 박는
 # scaffold. ADR-0007 §1 표준 강제 (S5/S6/S7) — 누락 X.
 #
 # Arguments:
@@ -41,6 +41,10 @@ TARGET="$REPO_ROOT/$LOCATION/$NAME"
 
 if [[ -e "$TARGET" ]]; then
   echo "already exists: $TARGET" >&2
+  echo "" >&2
+  echo "기존 SKILL 에 scaffold heredoc 갱신을 동기화하려면:" >&2
+  echo "  bash $(dirname "$0")/sync-skill.sh \"$TARGET\" --apply" >&2
+  echo "(보편 슬롯만 — 보안 §, rules/checklist SSOT docstring. 조건부 슬롯은 promote-docs/rules.md §체크리스트 참조)" >&2
   exit 2
 fi
 
@@ -81,7 +85,17 @@ allowed_tools: [Read, Edit, Bash]
 
 - \`allow_commands\` 선언 이유: (위험 명령 호출 시 — 없으면 "X — read/write only")
 - 동적 입력 (\$VAR / CLI 인자 / 파일 경로) 처리: \`source ../scripts/sanitize.sh\` 또는 인용 규칙 (\`"\$VAR"\`/\`printf %q\`).
-- 접근 금지 경로: \`.env\` / \`secrets/\` / 시크릿 token 등.
+- 시크릿 차단 + 출력 마스킹 — 아래 패턴은 read 대상에서 제외하고, 출력에 잡히면 \`***\` 으로 마스킹.
+
+| 카테고리 | 경로/이름 패턴 | 정규식 (예) |
+|----------|----------------|-------------|
+| dotenv | \`.env\`, \`.env.*\` (\`.local\`, \`.production\` 등) | \`(^|/)\\.env(\\..+)?$\` |
+| 시크릿 디렉토리 | \`secrets/\`, \`secret/\`, \`credentials/\` | \`(^|/)(secrets?|credentials)/\` |
+| 토큰 파일 | \`*token*\`, \`*apikey*\`, \`*api_key*\` | \`(token|api[_-]?key)\` (대소문자 무시) |
+| 키 자료 | \`*.pem\`, \`*.key\`, \`*.p12\`, \`*.pfx\`, \`id_rsa*\` | \`\\.(pem|key|p12|pfx)$\|^id_rsa\` |
+| 인증 헤더값 | \`Authorization: Bearer ...\`, \`x-api-key: ...\` | \`(Bearer\\s+\\S+|x-api-key:\\s*\\S+)\` |
+
+- 위 패턴 매치 시: 입력 거부 (read 단계) + 출력 발견 시 \`***\` 치환. 사용처 환경별 추가 패턴은 본 § 에 보강.
 EOF
 
 # rules.md
@@ -89,6 +103,8 @@ cat > "$TARGET/rules.md" <<EOF
 # $TITLE Rules
 
 > 스킬이 강제하는 룰셋·정책·금지 사항. SKILL.md (사용자 시점 진입점) 가 trigger 시 로드 → 본 rules.md 는 실제 룰 적용 시점에 지연 로드 ([[adr-0007-skill-authoring-rules]] §1).
+>
+> **rules.md 의 책임 (본질·SSOT)**: *무엇을 강제하는가 / 왜 / 위반 시 어떻게 되는가*. 도메인 룰 본문·정책·금지·예외 처리. 운영 단계 (Pre-flight / Action / Post-flight 표) 는 \`checklist.md\` 가 SSOT — rules 에는 박지 않음 ([[adr-0007-skill-authoring-rules]] §1 SKILL.md vs rules.md vs checklist.md 분리). 같은 정보가 양쪽에 박히면 표류 — 한쪽만 SSOT.
 
 ## (룰 카테고리 1)
 
@@ -106,6 +122,10 @@ EOF
 cat > "$TARGET/checklist.md" <<EOF
 # $TITLE Checklist
 
+> 운영 체크리스트 — *어떤 순서로 무엇을 점검·실행·검증하는가* (SSOT).
+> 룰의 본질 (왜 강제되는가) 은 \`rules.md\` 가 SSOT. 본 checklist 는 *실행 절차* 만 — 룰 본문 중복 박지 않음.
+> 운영 점검 항목이 늘어나면 본 파일을, 룰 자체가 늘어나면 \`rules.md\` 를 갱신.
+
 ## (시나리오 1) — Pre-flight
 
 - [ ] (점검 항목)
@@ -119,9 +139,10 @@ cat > "$TARGET/checklist.md" <<EOF
 - [ ] (검증 단계)
 EOF
 
-# examples/sample.md
-cat > "$TARGET/examples/sample.md" <<EOF
-# Example: $TITLE
+# examples/sample-no-reference.md (fallback / role-generic 케이스)
+# reference 로드 SKILL 은 sample-with-reference.md 를 별도로 박을 것 — promote-docs/rules.md §체크리스트 §A.
+cat > "$TARGET/examples/sample-no-reference.md" <<EOF
+# Example: $TITLE — fallback (no reference)
 
 > 사용 예 — 실제 결과물 sample.
 

@@ -1,5 +1,9 @@
 # Code Review Checklist
 
+> 운영 체크리스트 — *어떤 순서로 무엇을 점검·실행·검증하는가* (SSOT).
+> 룰의 본질 (왜 강제되는가) 은 `rules.md` 가 SSOT. 본 checklist 는 *실행 절차* 만 — 룰 본문 중복 박지 않음.
+> 운영 점검 항목이 늘어나면 본 파일을, 룰 자체가 늘어나면 `rules.md` 를 갱신.
+
 ## Pre-flight
 
 - [ ] 리뷰 대상 식별 — `/review` (git diff) / `/review path/...` (특정 파일) / `/review {domain}` 중 하나

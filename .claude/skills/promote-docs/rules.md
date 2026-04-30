@@ -233,12 +233,60 @@ ADR 본문(Decision)은 **immutable** — 한 번 적힌 결정 텍스트는 거
 - `scripts/wiki-to-adr.sh <wiki-file> [slug] [role]` — wiki → `content/adr/adr-NNNN-<slug>.md` (콘텐츠 ADR, 메타 ADR 카운터와 분리). role 인자: `base|planner|pm|frontend|backend|qa|infra`.
 - `scripts/adr-to-harness.sh <content-adr> <plugin-name>` — ADR → plugin 적용 (Notes 에 lineage 기록만; 패키징은 spec-09 release flow 영역).
 
+**SKILL scaffold + 동기화** (`.claude/skills/*` 또는 `content/harness/plugins/*/skills/*`)
+- `scripts/create-skill.sh <skill-name> <location> [description]` — 신규 SKILL 디렉토리 + 4 필수 자산 (SKILL.md / rules.md / examples/sample-no-reference.md / checklist.md) scaffold. 기존 디렉토리 존재 시 exit 2 + sync-skill 사용법 안내.
+- `scripts/sync-skill.sh <skill-dir> [--apply]` — `create-skill.sh` 의 *보편 슬롯* (SKILL.md 보안 §, rules/checklist SSOT docstring) 갱신을 기존 SKILL 에 idempotent additive 적용. dry-run 기본, `--apply` 로 실제 쓰기. 조건부 슬롯 (reference / phase / 출력 포맷 / examples 두 개) 은 다루지 않음 — 본 §"Skill / Wiki 합성 시 조건부 슬롯 체크리스트" 가 합성자 책임.
+
 **1 idea → N specs 예시**:
 ```
 idea-to-spec.sh docs/idea/idea-02-mediness-architecture.md content-pipeline
 idea-to-spec.sh docs/idea/idea-02-mediness-architecture.md directory-structure
 # ...
 ```
+
+## Skill / Wiki 합성 시 조건부 슬롯 체크리스트
+
+scaffold 가 *모든* SKILL·wiki 에 박는 것은 **보편 슬롯** (보안 마스킹·SSOT 분리) 만. 아래는 *type 별* 합성 시 추가로 박아야 하는 슬롯 — 해당하면 박고, 안 하면 *명시적 None* (예: "본 SKILL 은 reference 로드 안 함") 으로 표기.
+
+scaffold heredoc 에 이 슬롯들을 미리 박아두면 (1) 해당 안 되는 SKILL 에 죽은 § 가 남고 (2) "type 별 매번 나올 영역" 이 아닌데 강제하는 자기모순. 따라서 *합성·scaffold 시 본 체크리스트 통과* 가 운영.
+
+### A. SKILL 이 외부 reference (사용처 컨벤션 문서) 를 로드하는가?
+
+해당 시 (예: backend `code-review` 가 `docs/common/*.md` + `CLAUDE.md` 로드):
+- **rules.md** 에 `## reference 로드 모델` § 박기:
+  - 우선순위 표 (1 > 2 > 3 fallback) — 어느 파일부터 어떤 순서로 읽는가
+  - **충돌 시 룰** — 두 reference 가 같은 항목을 다르게 정의하면 어떻게 할지 명시 (예: "1번 우선" / "둘 다 박고 사용자에게 확인" / "엄격한 쪽")
+  - **fallback 명시** — 모든 reference 부재 시 적용할 *role-generic* 항목 (구체 컨벤션이 아닌 일반 원칙)
+  - **리포트에 출처 명시** 강제 — 이슈 발견 시 어느 reference 의 어느 룰인지 또는 `role-generic` 인지 박는다
+- **examples/** 두 개 박기 (명시적 명칭 — 어느 케이스인지 파일명에서 식별):
+  - `sample-with-reference.md` — reference 로드된 본문 (구체 컨벤션 인용)
+  - `sample-no-reference.md` — fallback 만으로 동작한 본문
+  - 단일 `sample.md` 는 모호 — 새로 박을 때는 위 두 명칭 사용. 기존 단일 `sample.md` 는 retrofit 시 명시적 명칭으로 rename.
+
+### B. SKILL 이 phase·step 표 (시간 / 비중 / 단계) 를 갖는가?
+
+해당 시 (예: 4단계 리뷰 프로세스):
+- 표 헤더에 **강제 / 가이드 분리** 명시:
+  - 시간/비중 컬럼은 *guideline* (예: "시간 (가이드)") — 강제 X 라는 사실을 헤더에 박는다
+  - 본질·산출 컬럼은 *강제* (예: "본질" 또는 "필수 산출")
+- 헤더 한 줄로 강제·가이드 구분이 안 된다면 컬럼 추가 (`강제도: 필수 / 권장`).
+- 같은 표를 rules.md (본질) 와 checklist.md (실행 절차) 양쪽에 박지 말 것 — rules SSOT.
+
+### C. SKILL 이 산출 포맷 (리포트·이슈 ID·정형 출력) 을 정의하는가?
+
+해당 시 (예: code-review 가 `B-NNN`/`I-NNN` 이슈 ID + 마크다운 리포트 산출):
+- **이슈 ID scope** 명시:
+  - 단일 리포트 내 부여 / 누적 (도메인 내 unique) / PR 단위 / 영구 unique — 어느 scope?
+  - scope 박지 않으면 사용자가 "이전 리포트의 B-001 이 이번 B-001 과 같은 이슈인가?" 헷갈림
+- 필수 필드 (ID·출처·코드·우선순위) 표 + 누락 시 처리
+
+### D. wiki 합성 시 — 위 A/B/C 가 wiki 본문에도 적용
+
+`sources-to-wiki.sh` 의 scaffold 는 lean (Summary / Synthesis / References) — wiki 가 산출 포맷·reference 로드·phase 표를 정의한다면 *합성자 (Claude)* 가 §"형식 및 규약" 또는 적절한 § 를 추가해 박아야 한다. wiki 의 §리포트 포맷 슬롯 = 이슈 ID scope + 필수 필드. 본 체크리스트 통과는 합성자 책임.
+
+### 미해당 시
+
+해당 안 되는 SKILL/wiki 는 슬롯 박지 말 것. "본 SKILL 은 reference 로드 안 함 — fallback 만으로 동작" 같은 *명시적 None* 도 OK. scaffold 에 죽은 § 남기지 말기.
 
 ## Don't
 
