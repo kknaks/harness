@@ -300,9 +300,10 @@ def check_role_manifests(root):
         role_name = role_dir.name
         manifest_path = role_dir / "role.json"
 
-        # filesystem state
+        # filesystem state — skills/ 의 디렉토리 자식만 (.gitkeep 같은 파일은 skill 아님)
         fs_skills = sorted(
-            [p.name for p in (role_dir / "skills").iterdir()]
+            [p.name for p in (role_dir / "skills").iterdir()
+             if p.is_dir() and not p.name.startswith(".")]
             if (role_dir / "skills").is_dir()
             else []
         )
