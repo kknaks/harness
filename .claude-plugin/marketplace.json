@@ -1,6 +1,9 @@
 {
   "name": "harness",
-  "owner": "medisolve",
+  "owner": {
+    "name": "medisolve",
+    "url": "https://github.com/kknaks/harness"
+  },
   "description": "mediness 사내 공용 하네스 — 단일 plugin + role-templates scaffolder ([[adr-0014-single-plugin-scaffolder]])",
   "plugins": [
     { "name": "harness", "source": "./content/harness/plugins/base" }
