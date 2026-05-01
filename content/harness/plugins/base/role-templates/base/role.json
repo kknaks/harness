@@ -1,0 +1,11 @@
+{
+  "role": "base",
+  "description": "medi-docs 기반 — 모든 role 의 prerequisite. /harness:init 시 항상 함께 설치됨 (auto-include).",
+  "depends_on": [],
+  "auto_include": true,
+  "skills": [
+    "medi-new",
+    "medi-version-cut",
+    "docs-validate"
+  ]
+}

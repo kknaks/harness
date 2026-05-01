@@ -74,6 +74,15 @@ visit_role() {
 for role in "${ROLES[@]}"; do
   visit_role "$role"
 done
+
+# base role auto-include (medi-docs prerequisite — 모든 init 시 자동 추가)
+already_has_base=false
+for r in "${EXPANDED[@]:-}"; do
+  [[ "$r" == "base" ]] && already_has_base=true
+done
+if ! $already_has_base && [[ -d "$ROLE_TEMPLATES/base" ]]; then
+  EXPANDED=("base" "${EXPANDED[@]}")
+fi
 # expand 결과로 ROLES 교체. 사용자 입력 순서는 무시 (depends-first 자연 정렬은
 # 의미 없음 — 모든 role 의 skills 가 별 디렉토리이므로 충돌 없음).
 ROLES=("${EXPANDED[@]}")
@@ -162,6 +171,13 @@ for role in "${ROLES[@]}"; do
     cp -R "$src/hooks/." "$TARGET/hooks/" 2>/dev/null || true
     echo "  → .claude/hooks/  (role hook 복사)"
   fi
+  # role-specific scripts (hook 호출 대상 + R4 collector 등 — .claude/scripts/ 에 추가)
+  if [[ -d "$src/scripts" ]]; then
+    mkdir -p "$TARGET/scripts"
+    cp "$src/scripts"/*.sh "$TARGET/scripts/" 2>/dev/null || true
+    chmod +x "$TARGET/scripts"/*.sh 2>/dev/null || true
+    echo "  → .claude/scripts/  (role script 복사)"
+  fi
 done
 
 # medi_docs scaffold (처음 셋업 시 — 이미 있으면 no-op, ADR-0008)
@@ -169,6 +185,15 @@ if [[ -x "$PLUGIN_ROOT/scripts/scaffold-medi-docs.sh" ]]; then
   echo ""
   echo "medi_docs scaffold:"
   "$PLUGIN_ROOT/scripts/scaffold-medi-docs.sh" "$PROJECT_DIR" 2>&1 | sed 's/^/  /' || true
+fi
+
+# R4 augment — SKILL 복사 후 .claude/skills/ introspect 해서 CLAUDE.md 마커 블록 박기 (ADR-0006 D-8)
+if [[ -x "$TARGET/scripts/medi-claude-md-augment.sh" ]]; then
+  echo ""
+  echo "[R4] CLAUDE.md augment:"
+  "$TARGET/scripts/medi-claude-md-augment.sh" "$PROJECT_DIR" 2>&1 | sed 's/^/  /' || {
+    echo "  ⚠ R4 augment 실패 (CLAUDE.md 마커 블록 박기 못함)" >&2
+  }
 fi
 
 echo ""

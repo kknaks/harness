@@ -59,9 +59,4 @@ if [[ -f "$MAP_TMPL" && ! -f "$TARGET/_map.md" ]]; then
   echo "  → medi_docs/current/_map.md (시드)"
 fi
 
-# R4 augment — 사용자 진입점 메타에 마커 블록 박기 (ADR-0006 D-1, D-2 옵션 A)
-echo ""
-echo "[R4] CLAUDE.md augment 단계 시작..."
-bash "$PLUGIN_ROOT/scripts/medi-claude-md-augment.sh" "$PROJECT_DIR" || {
-  echo "  ⚠ R4 augment 실패 (마커 블록 박기 못함). scaffold 자체는 성공." >&2
-}
+# R4 augment 는 init.sh 가 책임 — 모든 SKILL 복사 후 호출 (introspection 정확).
