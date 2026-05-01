@@ -1,6 +1,6 @@
 {
   "name": "harness",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "mediness 단일 plugin — /harness init 으로 role-templates 를 프로젝트 .claude/ 로 scaffold",
   "autoUpdate": true,
   "mcpServers": {

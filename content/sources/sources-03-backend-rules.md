@@ -2,7 +2,7 @@
 id: sources-03
 title: Backend Rules
 type: sources
-status: pending
+status: promoted
 sources:
   - "[[backend-rules]]"
 tags: [sources]

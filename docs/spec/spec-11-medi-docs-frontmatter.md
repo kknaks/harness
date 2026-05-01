@@ -15,7 +15,7 @@ related_to:
   - "[[spec-10-medi-docs-scaffold]]"
   - "[[adr-0008-medi-docs-scaffold]]"
 ---
-
+엥 
 # Medi Docs Frontmatter
 
 ## Scope

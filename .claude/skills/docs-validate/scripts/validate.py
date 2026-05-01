@@ -41,7 +41,7 @@ SOURCE_PREFIX = {"spec": "idea-", "adr": "spec-"}
 # status enum per kind. idea/콘텐츠 단계 status 는 *선택*; spec/adr 는 *필수*.
 # adr 는 메타·콘텐츠 공통 (ADR-0004 R9, ADR-0003 §status 라이프사이클).
 STATUS_ALLOWED = {
-    "idea": ["open", "absorbed", "archived", "superseded"],
+    "idea": ["open", "absorbed", "archived", "superseded", "rejected"],
     "spec": ["draft", "active", "accepted", "deprecated"],
     "adr": ["proposed", "accepted", "superseded", "deprecated"],
     "inbox": ["pending", "promoted", "archived"],
@@ -306,8 +306,10 @@ def check_wiki_sources_name_count(root):
         n = len(_re.findall(r"^name:\s*\S+", body, _re.MULTILINE))
         sources_name_counts[src_file.stem] = n
 
-    # 각 wiki 의 sources 가 인용한 SKILL 카운트 합 vs wiki 카운트
-    # (간단 룰: 1 wiki 의 sources 가 N>1 SKILL 을 인용하면 위반)
+    # sources 별 검사: name 카운트 N>1 인 sources 를 *N 이상의 wiki* 가 가리켜야 OK.
+    # W < N 이면 under-split (합성자가 메타-내러티브로 묶음 가능성).
+    wiki_count_by_source = {}
+    wiki_alias_overrides = set()
     for wiki_file in sorted(wiki_dir.glob("wiki-*.md")):
         if wiki_file.name == "_map.md":
             continue
@@ -315,28 +317,33 @@ def check_wiki_sources_name_count(root):
         if not fm:
             continue
         srcs = fm.get("sources", []) or []
-        # wiki 의 sources 가 인용한 SKILL 총 카운트
-        total_named = 0
+        # 이 wiki 가 alias 로 override 박았는가
+        aliases = fm.get("aliases", []) or []
+        has_override = any(
+            "split-skill" in str(a) or "merge-justified" in str(a)
+            for a in aliases
+        )
         for src in srcs:
             m = _re.match(r"\[\[([^\]]+)\]\]", str(src))
             if m:
                 stem = m.group(1)
-                total_named += sources_name_counts.get(stem, 0)
-        if total_named > 1:
-            # 예외: aliases 에 사용자 합의 사유 박혀 있으면 통과
-            aliases = fm.get("aliases", []) or []
-            has_override = any(
-                "split-skill" in str(a) or "merge-justified" in str(a)
-                for a in aliases
-            )
-            if has_override:
-                continue
-            rel = wiki_file.relative_to(root)
+                wiki_count_by_source[stem] = wiki_count_by_source.get(stem, 0) + 1
+                if has_override:
+                    wiki_alias_overrides.add(stem)
+
+    for src_stem, n_named in sources_name_counts.items():
+        if n_named <= 1:
+            continue
+        n_wiki = wiki_count_by_source.get(src_stem, 0)
+        if src_stem in wiki_alias_overrides:
+            continue
+        if n_wiki < n_named:
             out.append(
-                f"[wiki-multi-skill-merge] {rel}: sources 가 {total_named} 개의 자체 SKILL "
-                f"(`name:` frontmatter 보유) 인용 — 메타-내러티브로 잘못 묶었을 가능성. "
-                f"N wiki split 검토 (promote-docs/rules.md §sources→wiki §N→1 한계). "
-                f"정당한 merge 면 wiki frontmatter `aliases: [merge-justified-<reason>]` 박을 것"
+                f"[sources-under-split] content/sources/{src_stem}.md: "
+                f"{n_named} 개의 자체 SKILL (`name:` frontmatter) 을 인용하지만 "
+                f"{n_wiki} 개 wiki 만 가리킴 — *under-split* 가능성 (메타-내러티브로 묶음). "
+                f"N wiki split 권장 (promote-docs/rules.md §sources→wiki §N→1 한계). "
+                f"정당한 merge 면 해당 wiki 의 frontmatter `aliases: [merge-justified-<reason>]` 박을 것"
             )
     return out
 

@@ -2,7 +2,7 @@
 
 > 자동 생성. 수동 편집 금지. 재생성: `.claude/skills/docs-validate/scripts/validate.sh` (또는 docs/ 편집 시 자동 훅).
 
-_15 spec(s), 6 idea(s), 14 adr(s), 0 unpromoted_
+_15 spec(s), 7 idea(s), 14 adr(s), 1 unpromoted_
 
 ## Relations
 
@@ -45,11 +45,14 @@ _(없음)_
 - [adr-0003-content-pipeline](adr/adr-0003-content-pipeline.md) ↔ [adr-0004-frontmatter-naming](adr/adr-0004-frontmatter-naming.md)
 - [adr-0003-content-pipeline](adr/adr-0003-content-pipeline.md) ↔ [adr-0006-onboarding-skill](adr/adr-0006-onboarding-skill.md)
 - [adr-0003-content-pipeline](adr/adr-0003-content-pipeline.md) ↔ [adr-0007-skill-authoring-rules](adr/adr-0007-skill-authoring-rules.md)
+- [adr-0003-content-pipeline](adr/adr-0003-content-pipeline.md) ↔ [idea-07-adr-content-propagation](idea/idea-07-adr-content-propagation.md)
 - [adr-0004-frontmatter-naming](adr/adr-0004-frontmatter-naming.md) ↔ [adr-0008-medi-docs-scaffold](adr/adr-0008-medi-docs-scaffold.md)
+- [adr-0004-frontmatter-naming](adr/adr-0004-frontmatter-naming.md) ↔ [idea-07-adr-content-propagation](idea/idea-07-adr-content-propagation.md)
 - [adr-0005-version-rollout](adr/adr-0005-version-rollout.md) ↔ [adr-0006-onboarding-skill](adr/adr-0006-onboarding-skill.md)
 - [adr-0005-version-rollout](adr/adr-0005-version-rollout.md) ↔ [adr-0014-single-plugin-scaffolder](adr/adr-0014-single-plugin-scaffolder.md)
 - [adr-0007-skill-authoring-rules](adr/adr-0007-skill-authoring-rules.md) ↔ [adr-0009-harness-hooks](adr/adr-0009-harness-hooks.md)
 - [adr-0008-medi-docs-scaffold](adr/adr-0008-medi-docs-scaffold.md) ↔ [adr-0014-single-plugin-scaffolder](adr/adr-0014-single-plugin-scaffolder.md)
+- [adr-0008-medi-docs-scaffold](adr/adr-0008-medi-docs-scaffold.md) ↔ [idea-07-adr-content-propagation](idea/idea-07-adr-content-propagation.md)
 - [adr-0008-medi-docs-scaffold](adr/adr-0008-medi-docs-scaffold.md) ↔ [spec-11-medi-docs-frontmatter](spec/spec-11-medi-docs-frontmatter.md)
 - [adr-0008-medi-docs-scaffold](adr/adr-0008-medi-docs-scaffold.md) ↔ [spec-12-medi-docs-tooling](spec/spec-12-medi-docs-tooling.md)
 - [adr-0008-medi-docs-scaffold](adr/adr-0008-medi-docs-scaffold.md) ↔ [spec-14-harness-hooks](spec/spec-14-harness-hooks.md)
@@ -63,6 +66,7 @@ _(없음)_
 - [adr-0011-base-hoisting](adr/adr-0011-base-hoisting.md) ↔ [adr-0012-promote-skills](adr/adr-0012-promote-skills.md)
 - [adr-0011-base-hoisting](adr/adr-0011-base-hoisting.md) ↔ [adr-0014-single-plugin-scaffolder](adr/adr-0014-single-plugin-scaffolder.md)
 - [adr-0011-base-hoisting](adr/adr-0011-base-hoisting.md) ↔ [spec-06-base-hoisting](spec/spec-06-base-hoisting.md)
+- [adr-0012-promote-skills](adr/adr-0012-promote-skills.md) ↔ [idea-07-adr-content-propagation](idea/idea-07-adr-content-propagation.md)
 - [adr-0012-promote-skills](adr/adr-0012-promote-skills.md) ↔ [spec-05-promote-skills](spec/spec-05-promote-skills.md)
 - [adr-0013-hook-precedence](adr/adr-0013-hook-precedence.md) ↔ [spec-08-hook-precedence](spec/spec-08-hook-precedence.md)
 - [idea-01-distribution-strategy](idea/idea-01-distribution-strategy.md) ↔ [idea-02-mediness-architecture](idea/idea-02-mediness-architecture.md)
@@ -115,6 +119,7 @@ _(없음)_
 | [idea-04-skill-authoring-rules](idea/idea-04-skill-authoring-rules.md) | absorbed | [spec-13-skill-authoring-rules](spec/spec-13-skill-authoring-rules.md) |
 | [idea-05-harness-hooks](idea/idea-05-harness-hooks.md) | absorbed | [spec-14-harness-hooks](spec/spec-14-harness-hooks.md) |
 | [idea-06-harness-mcp](idea/idea-06-harness-mcp.md) | absorbed | [spec-15-harness-mcp](spec/spec-15-harness-mcp.md) |
+| [idea-07-adr-content-propagation](idea/idea-07-adr-content-propagation.md) | rejected | _(unpromoted)_ |
 
 ## ADRs
 
