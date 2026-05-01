@@ -48,14 +48,36 @@ idea 파일은 항상 보존. 추적의 단방향 진실은 spec 의 frontmatter
 **sources → wiki** (N→1, 주제 단위):
 - 묶음 기준 = **주제·기능** (코드 리뷰 / 테스트 설계 / 모니터링 / 배포 등) — *project-agnostic*
 - 묶음 기준 ≠ 프로젝트 (NEXUS / Foo 등) — 같은 프로젝트라는 우연한 동시성으로 묶으면 *공용 plugin 추출* 가치 0
-- 머지 후보 검토 default:
+- **묶음 기준 ≠ 메타-내러티브** (lifecycle / 시리즈 / 워크플로우 / "X 의 4 단계" 등) — 합성자가 *발명한 상위 개념* 으로 독립 SKILL 묶지 X. 메타 관계는 wiki 본문 §관계 또는 ADR `depends_on` / `related_to` 로 표현.
+
+### N→1 합성의 한계 — frontmatter `name:` 카운트 룰
+
+입력 sources 의 *원본 inbox raw 인용* 영역에서 frontmatter `name:` 보유 파일을 카운트 (Claude Code SKILL 모델 / ADR-0007 §S1 — `name:` 가 박혀있다 = 자체 SKILL 정체).
+
+| `name:` 카운트 | wiki 산출 |
+|----------------|-----------|
+| 0 | 1 wiki (raw 자료 자체가 SKILL 아님 — 일반 문서·sniipet) |
+| 1 | 1 wiki (단일 SKILL 의 합성) |
+| **N > 1** | **N wiki** (각자 별 wiki 로 합성) — 메타-내러티브로 묶지 말 것 |
+
+`inbox-to-sources.sh` 가 디렉토리 입력 시 `name:` 카운트 stderr 진단 출력 — 합성자는 그 카운트만큼 wiki 박을 것.
+
+**예외** — N>1 인데 1 wiki 가 정당한 케이스:
+- 모든 `name:` 가 *같은 SKILL 의 split 표현* 인 경우 (예: 같은 SKILL 의 v1 / v2 / 실험 변형) — 드뭄
+- 명시적 사용자 합의 후만 — 진단 출력 무시 사유를 ADR Notes 또는 wiki frontmatter `aliases:` 에 박는다
+
+### 머지 후보 검토 default
+
+각 wiki 박기 전:
   1. `content/_map.md` 에서 기존 wiki 목록 + 주제 확인
   2. 새 sources 의 *주제* 식별 → 기존 wiki 와 매칭?
   3. **사용자 확인** — "이 sources 의 주제가 wiki-XX 와 같은가?"
   4. 분기:
      - 매칭 → `merge-sources-to-wiki.sh <sources> <wiki>` (sources lineage 추가)
      - 매칭 X → `sources-to-wiki.sh <sources> <topic-slug>` (새 wiki)
-- wiki 본문 합성 = *공용 골격 (project-agnostic) + 프로젝트 의존 분리* 두 층:
+
+### wiki 본문 합성 = 두 층 분리
+
   - 공용 골격 = 모든 프로젝트에 적용 가능한 패턴 (트리거·프로세스·출력 형식 등)
   - 프로젝트 의존 = 각 프로젝트의 컨벤션·인프라 가정 (Layer Objects, Mother 위치 등) — 분리 표시
 

@@ -3,7 +3,6 @@
   "version": "0.1.0",
   "description": "API 설계 / DB 마이그레이션 / Python·PostgreSQL 컨벤션. 사용처 프로젝트의 docs/common/*.md + CLAUDE.md 를 reference 로 로드, 부재 시 role-generic fallback (계층화 일반 원칙).",
   "skills": [
-    "backend-rules",
     "code-review",
     "test-design"
   ],

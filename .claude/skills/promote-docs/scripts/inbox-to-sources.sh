@@ -92,6 +92,28 @@ aliases: []
 
 EOF
 
+# 진단: 디렉토리 입력 시 child 파일의 frontmatter `name:` 카운트 — N>1 이면
+# *각자 자체 SKILL* 신호. 합성자 (Claude / 메인테이너) 가 sources→wiki 단계에서
+# 단일 wiki 로 묶지 않도록 stderr 경고. 본 sh 자체는 mechanical 1:1 유지
+# (자산 단위 = 디렉토리, ADR-0003 §자산 단위) — block X.
+if [[ -d "$INBOX" ]]; then
+  N_NAMED=$(grep -l "^name:" "$INBOX"/*.md 2>/dev/null | wc -l | tr -d ' ')
+  if (( N_NAMED > 1 )); then
+    {
+      echo ""
+      echo "⚠ 합성자 진단: $INBOX 의 .md 파일 중 $N_NAMED 개가 frontmatter \`name:\` 보유"
+      echo "  → 각자 *자체 SKILL 정체* (Claude Code SKILL 모델 / ADR-0007 §S1)"
+      echo "  → sources→wiki 단계에서 *N wiki* 박을 것 (메타-내러티브 묶음 금지 — promote-docs/rules.md §sources→wiki)"
+      echo "  발견된 SKILL:"
+      grep -l "^name:" "$INBOX"/*.md 2>/dev/null | while read f; do
+        nm=$(grep "^name:" "$f" | head -1 | sed 's/name: *//' | tr -d ' ')
+        echo "    - $(basename "$f"): name=$nm"
+      done
+      echo ""
+    } >&2
+  fi
+fi
+
 # raw 본문 인용 — 디렉토리/파일 분기 자동
 if [[ -d "$INBOX" ]]; then
   # 디렉토리: 각 파일별 코드 블록 자동 인용 (자식 트리 walk)

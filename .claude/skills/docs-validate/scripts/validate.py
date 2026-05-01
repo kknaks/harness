@@ -268,6 +268,79 @@ def check_skill_layout(root):
     return out
 
 
+def check_wiki_sources_name_count(root):
+    """R13: wiki 의 sources 로부터 *각자 SKILL 정체* 인 inbox 파일 카운트 정합 검증.
+
+    promote-docs/rules.md §sources → wiki §N→1 합성의 한계:
+      - sources 가 인용한 inbox 파일 중 frontmatter `name:` 보유 파일 카운트 = N
+      - N > 1 인데 wiki 가 *1* 만 박혀 있으면 → 메타-내러티브로 잘못 묶음 가능성
+      - violation: "wiki-XX 가 N 개의 자체 SKILL 을 묶음 — N wiki split 검토"
+
+    sources 본문의 raw 인용 영역에서 `name:` 패턴 카운트. inbox 디렉토리 자산이
+    아니면 (1 file 이면) skip. 메타-내러티브로 묶을 *정당* 한 케이스 (사용자
+    합의) 는 wiki frontmatter `aliases:` 에 명시 사유 박으면 통과.
+    """
+    import re as _re
+
+    out = []
+    sources_dir = root / "content" / "sources"
+    wiki_dir = root / "content" / "wiki"
+    if not sources_dir.is_dir() or not wiki_dir.is_dir():
+        return out
+
+    # sources_id → name: count
+    sources_name_counts = {}
+    for src_file in sorted(sources_dir.glob("sources-*.md")):
+        text = src_file.read_text()
+        # raw 인용 영역에서 `name:` 카운트 — sources 본문의 frontmatter 가 아닌
+        # 인용된 inbox 파일들의 frontmatter. 인용 영역은 fence 안 → "name: " 시작 라인
+        # frontmatter 가 ~~~markdown 안에 있으므로 line-start ^name: 로 잡힘.
+        # 다만 sources 자체 frontmatter 의 name: 도 있을 수 있으므로 frontmatter 후
+        # 본문만 검사.
+        if text.startswith("---\n"):
+            end = text.find("\n---", 4)
+            body = text[end + 4:] if end >= 0 else text
+        else:
+            body = text
+        # raw 인용된 frontmatter 의 name: 라인 카운트
+        n = len(_re.findall(r"^name:\s*\S+", body, _re.MULTILINE))
+        sources_name_counts[src_file.stem] = n
+
+    # 각 wiki 의 sources 가 인용한 SKILL 카운트 합 vs wiki 카운트
+    # (간단 룰: 1 wiki 의 sources 가 N>1 SKILL 을 인용하면 위반)
+    for wiki_file in sorted(wiki_dir.glob("wiki-*.md")):
+        if wiki_file.name == "_map.md":
+            continue
+        fm = parse_frontmatter(wiki_file.read_text())
+        if not fm:
+            continue
+        srcs = fm.get("sources", []) or []
+        # wiki 의 sources 가 인용한 SKILL 총 카운트
+        total_named = 0
+        for src in srcs:
+            m = _re.match(r"\[\[([^\]]+)\]\]", str(src))
+            if m:
+                stem = m.group(1)
+                total_named += sources_name_counts.get(stem, 0)
+        if total_named > 1:
+            # 예외: aliases 에 사용자 합의 사유 박혀 있으면 통과
+            aliases = fm.get("aliases", []) or []
+            has_override = any(
+                "split-skill" in str(a) or "merge-justified" in str(a)
+                for a in aliases
+            )
+            if has_override:
+                continue
+            rel = wiki_file.relative_to(root)
+            out.append(
+                f"[wiki-multi-skill-merge] {rel}: sources 가 {total_named} 개의 자체 SKILL "
+                f"(`name:` frontmatter 보유) 인용 — 메타-내러티브로 잘못 묶었을 가능성. "
+                f"N wiki split 검토 (promote-docs/rules.md §sources→wiki §N→1 한계). "
+                f"정당한 merge 면 wiki frontmatter `aliases: [merge-justified-<reason>]` 박을 것"
+            )
+    return out
+
+
 def check_role_manifests(root):
     """R12: role-templates/<role>/role.json 의 skills/commands/hooks 배열이
     실재 디렉토리·파일과 일치하는지 검증.
@@ -718,6 +791,7 @@ def main(root):
     violations += check_content_adr_role(root)
     violations += check_skill_layout(root)
     violations += check_role_manifests(root)
+    violations += check_wiki_sources_name_count(root)
     warnings = check_body_length(docs)
 
     if violations:
