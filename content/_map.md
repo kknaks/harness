@@ -2,7 +2,7 @@
 
 > 자동 생성. 수동 편집 금지. 재생성: `.claude/skills/docs-validate/scripts/validate.sh`. ADR-0001 §콘텐츠 레이어 인덱스 (메타 `docs/_map.md` 와 평행).
 
-_5단 자산: inbox 3 · sources 3 (promoted: 3) · wiki 5 (promoted: 5) · adr 5 (proposed: 5) · harness 1 (총 17)_
+_5단 자산: inbox 4 · sources 4 (promoted: 4) · wiki 6 (promoted: 6) · adr 6 (proposed: 6) · harness 1 (총 21)_
 
 ## Categories
 
@@ -10,6 +10,7 @@ _5단 자산: inbox 3 · sources 3 (promoted: 3) · wiki 5 (promoted: 5) · adr 
 - `tdd` — 3
 - `test-design` — 3
 - `api-design` — 2
+- `docs-scaffold` — 2
 - `layered-architecture` — 2
 - `refactoring` — 2
 - `convention-check` — 1

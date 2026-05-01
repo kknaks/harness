@@ -1,0 +1,27 @@
+<!-- medi-docs-managed:start v=0.2 -->
+## medi_docs/ (harness plugin)
+
+이 프로젝트의 docs 는 `medi_docs/current/` 의 9 카테고리에 정형화되어있다.
+
+**진입점**: `medi_docs/planning/` 부터 읽고 frontmatter `sources:` 그래프 따라 내려간다. 관계 그래프는 `medi_docs/current/_map.md`.
+
+**9 카테고리**: `planning` (무엇을) → `plan` (언제·어떻게) → `spec/policy` (명세·정책) → `adr` (결정) → `runbook` `test` `release-notes` `retrospective`.
+
+**버전 모델**: `current/` = 살아있는 작업 + `v{label}/` = cut 시점 박제 (read-only).
+
+**슬래시 명령**:
+<!-- medi-docs-managed:slash-list:start -->
+- `/medi:new` — 새 문서 생성 (카테고리 선택, template.md 시드)
+- `/medi:version-cut` — 현재 상태를 `v{label}/` 으로 박제 (D1 검증 강제)
+<!-- medi-docs-managed:slash-list:end -->
+
+**자동 hook**:
+- `medi_docs/current/**` 변경 시 frontmatter + 관계 자동 검증 (H1).
+- 신규 세션 진입 시 `medi_docs/` 부재면 scaffold 안내 (H2).
+
+**강제 룰**:
+- D1 (cut 직전 검증) — `current/` 전체가 frontmatter 통과해야 cut 가능.
+- D4 (lineage 필수) — 비-`planning` 문서는 `sources:` 최소 1개 필수.
+
+(이 섹션은 harness plugin 이 자동 박음 + 갱신. 마커 외부 내용은 보존됨.)
+<!-- medi-docs-managed:end -->

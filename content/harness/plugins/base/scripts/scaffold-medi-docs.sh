@@ -51,3 +51,17 @@ if (( created == 0 )); then
 else
   echo "  ($created 카테고리 신규 생성, $existed 보존)"
 fi
+
+# _map.md 시드 (없으면 박음)
+MAP_TMPL="$TEMPLATES_DIR/_map.md.tmpl"
+if [[ -f "$MAP_TMPL" && ! -f "$TARGET/_map.md" ]]; then
+  cp "$MAP_TMPL" "$TARGET/_map.md"
+  echo "  → medi_docs/current/_map.md (시드)"
+fi
+
+# R4 augment — 사용자 진입점 메타에 마커 블록 박기 (ADR-0006 D-1, D-2 옵션 A)
+echo ""
+echo "[R4] CLAUDE.md augment 단계 시작..."
+bash "$PLUGIN_ROOT/scripts/medi-claude-md-augment.sh" "$PROJECT_DIR" || {
+  echo "  ⚠ R4 augment 실패 (마커 블록 박기 못함). scaffold 자체는 성공." >&2
+}

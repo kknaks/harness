@@ -19,7 +19,8 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/scripts/medi-validate.sh",
-            "condition": "${HARNESS_HOOK_H1_ENABLED:-true}"
+            "condition": "${HARNESS_HOOK_H1_ENABLED:-true}",
+            "path_filter": "medi_docs/current/**"
           }
         ]
       }
@@ -31,6 +32,11 @@
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/scripts/env-check.sh",
             "condition": "${HARNESS_HOOK_H5_ENABLED:-true}"
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/medi-scaffold-check.sh",
+            "condition": "${HARNESS_HOOK_H2_ENABLED:-true}"
           }
         ]
       }
