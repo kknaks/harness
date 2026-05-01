@@ -6,8 +6,18 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/secret-guard.sh",
-            "condition": "${HARNESS_HOOK_H4_ENABLED:-true}"
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/secret-guard.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/medi-validate-hook.sh"
           }
         ]
       }
@@ -17,8 +27,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/env-check.sh",
-            "condition": "${HARNESS_HOOK_H5_ENABLED:-true}"
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/env-check.sh"
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/medi-scaffold-check.sh"
           }
         ]
       }

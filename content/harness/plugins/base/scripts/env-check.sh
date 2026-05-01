@@ -4,6 +4,8 @@
 # Follow-up (ADR-0009): role plugin 별 환경 검증 분리 운영 후 검토.
 set -euo pipefail
 
+[[ "${HARNESS_HOOK_H5_ENABLED:-true}" == "true" ]] || exit 0
+
 MISSING=()
 command -v docker >/dev/null 2>&1 || MISSING+=("Docker (필요: GitHub MCP — ADR-0010)")
 command -v node   >/dev/null 2>&1 || MISSING+=("Node")

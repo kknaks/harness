@@ -5,6 +5,8 @@
 
 set -euo pipefail
 
+[[ "${HARNESS_HOOK_H2_ENABLED:-true}" == "true" ]] || exit 0
+
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
 
 # medi_docs/ 존재하면 silent

@@ -165,13 +165,9 @@ for role in "${ROLES[@]}"; do
       done
     fi
   fi
-  # role-specific hooks (manifest 무관 — 있으면 .claude/hooks/ 에 추가)
-  if [[ -d "$src/hooks" ]]; then
-    mkdir -p "$TARGET/hooks"
-    cp -R "$src/hooks/." "$TARGET/hooks/" 2>/dev/null || true
-    echo "  → .claude/hooks/  (role hook 복사)"
-  fi
-  # role-specific scripts (hook 호출 대상 + R4 collector 등 — .claude/scripts/ 에 추가)
+  # role-specific scripts (R4 augment/uninstall 등 — .claude/scripts/ 에 추가)
+  # NOTE: role-level hooks 는 박지 않음. ADR-0009/0013 — 모든 hook 책임은 base plugin
+  # 의 plugin-level hooks.json (Claude Code 가 plugin enable 시 자동 로드).
   if [[ -d "$src/scripts" ]]; then
     mkdir -p "$TARGET/scripts"
     cp "$src/scripts"/*.sh "$TARGET/scripts/" 2>/dev/null || true

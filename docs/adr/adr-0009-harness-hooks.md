@@ -57,9 +57,9 @@ plugin 의 `plugin.json` 또는 `hooks/hooks.json` 에 hook 선언 → plugin en
 | 입도 | 메커니즘 | 명령 |
 |------|----------|------|
 | **plugin 전체** | Claude Code native | `/plugin disable harness` |
-| **개별 hook** | manifest condition + env var | `condition: "${HARNESS_HOOK_<ID>_ENABLED:-true}"` |
+| **개별 hook** | script 내부 env 검사 | `[[ "${HARNESS_HOOK_<ID>_ENABLED:-true}" == "true" ]] || exit 0` |
 
-(Claude Code 가 *개별 hook* `disabled: true` 플래그 native 미지원. `disableAllHooks: true` 는 *모든* hook 영향 → 권장 X.)
+(Claude Code 가 *개별 hook* `disabled: true` 플래그 native 미지원. `disableAllHooks: true` 는 *모든* hook 영향 → 권장 X. manifest `condition` 필드도 비표준 — 2026-05-01 Notes 참조.)
 
 ### 4. 트리거 경로 한정
 
@@ -120,3 +120,4 @@ plugin 의 `plugin.json` 또는 `hooks/hooks.json` 에 hook 선언 → plugin en
 
 - 2026-04-29: [[spec-14-harness-hooks]] → ADR 승격. 외부 조사로 plugin manifest hook 스펙 + `disabled` 플래그 native 미지원 확인 후 design 박제. spec-14 status accepted 유지.
 - 2026-04-29: 정합성 검증 후 §1 hook 셋에 H4 (시크릿 차단) + H5 (환경 검증) 추가. [[adr-0013-hook-precedence]] §1 가 base 책임으로 박은 보안·환경 카테고리가 §1 enum 에 누락되어 있던 갭 해소. 첫 출시 필수 = H1+H4+H5 3 종.
+- 2026-05-01: 구현 검증 중 발견 — manifest `condition` / `path_filter` 필드 모두 Claude Code hook 표준 미지원 (`matcher` + `command` 만 인식). 동일 UX 유지하되 implementation 이전: (a) `condition` → script 내부 early-exit 검사 (§3 표 갱신), (b) `path_filter` → script 내부 stdin path 검사 (§4 의 wrapper 컨벤션과 동일). 또한 H1/H2 가 role-template 의 `hooks/hooks.json` 으로 잘못 들어가 있던 실행 드리프트 ([[adr-0009]] §1 = base plugin 책임) 를 plugin-level (`base/hooks/hooks.json`) 으로 통합. role-template 의 hook 카피 블록은 init.sh 에서 제거.

@@ -4,6 +4,8 @@
 # 동적 입력 (file_path) 은 case 패턴 매칭에만 사용 — 셸 삽입 회피 (ADR-0007 §5).
 set -euo pipefail
 
+[[ "${HARNESS_HOOK_H4_ENABLED:-true}" == "true" ]] || exit 0
+
 INPUT=$(cat)
 FILE_PATH=$(printf '%s' "$INPUT" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path',''))")
 
