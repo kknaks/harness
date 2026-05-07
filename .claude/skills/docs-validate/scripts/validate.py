@@ -254,18 +254,48 @@ def check_skill_layout(root):
 
     for sk in skill_dirs:
         rel = sk.relative_to(root)
-        ex = sk / "examples"
-        if not ex.exists() or not ex.is_dir():
-            out.append(f"[missing-skill-asset] {rel}: examples/ 디렉토리 누락 (S5)")
-        else:
-            assets = [c for c in ex.iterdir() if not c.name.startswith(".")]
-            if not assets:
-                out.append(f"[missing-skill-asset] {rel}: examples/ 비어있음 (S5)")
-        if not (sk / "checklist.md").exists():
-            out.append(f"[missing-skill-asset] {rel}: checklist.md 누락 (S6)")
+        # ADR-0015: SKILL.md frontmatter 의 asset_type 읽음
+        asset_type = _read_asset_type(sk / "SKILL.md")
+        is_reference = asset_type == "reference"
+        # reference 자산은 S5 (examples) + S6 (checklist) 면제 — OQ-A 결정
+        if not is_reference:
+            ex = sk / "examples"
+            if not ex.exists() or not ex.is_dir():
+                out.append(f"[missing-skill-asset] {rel}: examples/ 디렉토리 누락 (S5)")
+            else:
+                assets = [c for c in ex.iterdir() if not c.name.startswith(".")]
+                if not assets:
+                    out.append(f"[missing-skill-asset] {rel}: examples/ 비어있음 (S5)")
+            if not (sk / "checklist.md").exists():
+                out.append(f"[missing-skill-asset] {rel}: checklist.md 누락 (S6)")
+        # rules.md 는 reference 도 강제 (S7) — 룰·개념 박는 곳
         if not (sk / "rules.md").exists():
             out.append(f"[missing-skill-asset] {rel}: rules.md 누락 (S7)")
+        # asset_type enum 검증
+        if asset_type not in ("skill", "reference"):
+            out.append(f"[bad-asset-type] {rel}: asset_type='{asset_type}' (enum: skill | reference)")
     return out
+
+
+def _read_asset_type(skill_md_path):
+    """SKILL.md frontmatter 에서 asset_type 추출 (ADR-0015). 미박힘 = 'skill' (디폴트)."""
+    if not skill_md_path.exists():
+        return "skill"
+    try:
+        text = skill_md_path.read_text(encoding="utf-8", errors="replace")
+    except Exception:
+        return "skill"
+    if not text.startswith("---"):
+        return "skill"
+    end = text.find("\n---", 3)
+    if end < 0:
+        return "skill"
+    fm = text[3:end]
+    for line in fm.splitlines():
+        line = line.strip()
+        if line.startswith("asset_type:"):
+            return line.split(":", 1)[1].strip()
+    return "skill"
 
 
 def check_wiki_sources_name_count(root):
@@ -413,10 +443,11 @@ def check_role_manifests(root):
                 f"role={m_role!r} != dir name {role_name!r}"
             )
 
-        # skills 배열 ↔ skills/ 디렉토리
-        m_skills = data.get("skills", []) or []
-        missing = [s for s in m_skills if s not in fs_skills]
-        orphan = [s for s in fs_skills if s not in m_skills]
+        # skills 배열 ↔ skills/ 디렉토리 (ADR-0015: mixed string/object 처리)
+        m_skills_raw = data.get("skills", []) or []
+        m_skill_names = [s["name"] if isinstance(s, dict) else s for s in m_skills_raw]
+        missing = [s for s in m_skill_names if s not in fs_skills]
+        orphan = [s for s in fs_skills if s not in m_skill_names]
         for s in missing:
             out.append(
                 f"[role-manifest-skill-missing] {manifest_path.relative_to(root)}: "

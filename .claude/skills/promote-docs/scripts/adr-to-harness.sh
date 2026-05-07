@@ -50,6 +50,15 @@ fi
 ADR_BASE="$(basename "$ADR" .md)"
 TODAY=$(date +%Y-%m-%d)
 
+# ADR-0015: ADR frontmatter `asset_type: reference` 발견 시 add-role-skill.sh 호출 시 --reference 자동 전달
+ASSET_TYPE=$(awk '/^---$/{c++; next} c==1 && /^asset_type:/{sub(/^asset_type:[[:space:]]*/,""); print; exit}' "$ADR")
+ADD_FLAG=""
+ADD_LABEL="SKILL"
+if [[ "$ASSET_TYPE" == "reference" ]]; then
+  ADD_FLAG=" --reference"
+  ADD_LABEL="reference"
+fi
+
 # Notes line — single plugin + role 박제
 NOTE="- $TODAY: applied to plugin \`base\` role \`$ROLE\` (content/harness/plugins/base/role-templates/$ROLE/)"
 
@@ -63,13 +72,13 @@ if ! grep -qF "applied to plugin \`base\` role \`$ROLE\`" "$ADR"; then
 fi
 
 cat <<EOF
-ADR applied: $ADR_BASE -> base/role-templates/$ROLE
+ADR applied: $ADR_BASE -> base/role-templates/$ROLE (asset_type: ${ASSET_TYPE:-skill})
 
 Notes appended (lineage trace).
 
 Next steps (NOT handled by this script — see adr-0005 version-rollout):
-  1. SKILL 자산 박기 (없으면): add-role-skill.sh $ROLE <skill-name> "<desc>"
-  2. SKILL 본문 채움 (ADR-0007 §1 표준): SKILL.md / rules.md / checklist.md / examples/
+  1. $ADD_LABEL 자산 박기 (없으면): add-role-skill.sh$ADD_FLAG $ROLE <name> "<desc>"
+  2. 본문 채움 (ADR-0007 §1 표준): SKILL.md / rules.md$( [[ "$ASSET_TYPE" != "reference" ]] && echo " / checklist.md / examples/" )
   3. base plugin manifest version bump: content/harness/plugins/base/plugin.json
   4. dogfood install: /plugin marketplace add ... + /plugin install harness + /reload-plugins
   5. 사용처에서 검증: /harness:init $ROLE → .claude/skills/<n>/ 박힘 확인

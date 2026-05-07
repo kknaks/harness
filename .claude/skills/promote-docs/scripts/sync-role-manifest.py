@@ -53,12 +53,54 @@ def list_md_stems(parent):
     return sorted([p.stem for p in parent.glob("*.md") if not p.name.startswith(".")])
 
 
+def read_skill_asset_type(skill_dir):
+    """Read SKILL.md frontmatter and return asset_type ('skill' default, or 'reference').
+
+    ADR-0015: skills[] 항목의 type 필드는 SKILL.md frontmatter `asset_type` 미러링.
+    누락 시 'skill' (디폴트). 다른 값은 그대로 반환 (validate 가 enum 검증).
+    """
+    skill_md = skill_dir / "SKILL.md"
+    if not skill_md.exists():
+        return "skill"
+    text = skill_md.read_text(encoding="utf-8", errors="replace")
+    if not text.startswith("---"):
+        return "skill"
+    end = text.find("\n---", 3)
+    if end < 0:
+        return "skill"
+    fm = text[3:end]
+    for line in fm.splitlines():
+        line = line.strip()
+        if line.startswith("asset_type:"):
+            return line.split(":", 1)[1].strip()
+    return "skill"
+
+
+def list_skills_with_type(parent):
+    """ADR-0015: skills[] 는 mixed format —
+    asset_type=skill (또는 미박힘) → 문자열 (기존 호환)
+    asset_type=reference → object {"name": ..., "type": "reference"}
+    """
+    if not parent.is_dir():
+        return []
+    out = []
+    for p in sorted(parent.iterdir(), key=lambda x: x.name):
+        if not p.is_dir() or p.name.startswith("."):
+            continue
+        atype = read_skill_asset_type(p)
+        if atype == "skill":
+            out.append(p.name)
+        else:
+            out.append({"name": p.name, "type": atype})
+    return out
+
+
 def sync_role(role_dir):
     """Sync the role.json in role_dir with filesystem. Returns (changed, summary)."""
     manifest_path = role_dir / "role.json"
     role_name = role_dir.name
 
-    skills_present = list_subdirs(role_dir / "skills")
+    skills_present = list_skills_with_type(role_dir / "skills")
     commands_present = list_md_stems(role_dir / "commands")
     hooks_present = list_md_stems(role_dir / "hooks")  # adjust if hooks are dirs
 
@@ -93,7 +135,12 @@ def sync_role(role_dir):
         "depends_on": existing["depends_on"],
     }
 
-    # Diff
+    # Diff — mixed string/object 형태 처리 (ADR-0015)
+    def _to_pair(item):
+        if isinstance(item, dict):
+            return (item.get("name"), item.get("type", "skill"))
+        return (item, "skill")
+
     changes = []
     if not manifest_path.exists():
         changes.append("created (skeleton)")
@@ -101,12 +148,21 @@ def sync_role(role_dir):
         for k in ("skills", "commands", "hooks"):
             old = data.get(k, []) or []
             new = new_data[k]
-            added = sorted(set(new) - set(old))
-            removed = sorted(set(old) - set(new))
+            old_map = dict(_to_pair(x) for x in old)
+            new_map = dict(_to_pair(x) for x in new)
+            added = sorted(set(new_map) - set(old_map))
+            removed = sorted(set(old_map) - set(new_map))
+            type_changed = sorted(
+                f"{n}: {old_map[n]}→{new_map[n]}"
+                for n in set(new_map) & set(old_map)
+                if old_map[n] != new_map[n]
+            )
             if added:
                 changes.append(f"{k} +{added}")
             if removed:
                 changes.append(f"{k} -{removed}")
+            if type_changed:
+                changes.append(f"{k} type: {type_changed}")
 
     if not changes:
         return False, f"OK {role_name}: in sync (skills={len(skills_present)}, commands={len(commands_present)}, hooks={len(hooks_present)})"

@@ -1,16 +1,21 @@
 #!/usr/bin/env bash
-# Usage: create-skill.sh <skill-name> <location> [description]
+# Usage: create-skill.sh [--reference] <skill-name> <location> [description]
 #
 # 4 필수 자산 (SKILL.md + rules.md + examples/sample-no-reference.md + checklist.md) 자동 박는
 # scaffold. ADR-0007 §1 표준 강제 (S5/S6/S7) — 누락 X.
 #
+# `--reference` 플래그 (ADR-0015):
+#   - SKILL.md frontmatter `asset_type: reference` 박기 (디폴트: 생략 = skill)
+#   - `allowed_tools: [Read]` (코드 변경 X)
+#   - examples/ + checklist.md 생성 SKIP (OQ-A: 완전 면제)
+#   - rules.md 는 여전히 생성 (개념·룰 박는 곳)
+#
 # Arguments:
-#   <skill-name>   kebab-case (예: code-review, test-design)
+#   <skill-name>   kebab-case (예: code-review, db-transaction)
 #   <location>     SKILL 디렉토리 부모.
 #                  - 메인테이너: .claude/skills
 #                  - 사용자 배포본: content/harness/plugins/<role>/skills
-#                                   (또는 content/harness/plugins/base/skills)
-#   [description]  SKILL.md frontmatter description (선택, 빈 문자열 default)
+#   [description]  SKILL.md frontmatter description (선택)
 #
 # Output: 생성된 SKILL 디렉토리 경로.
 # Exit codes:
@@ -21,13 +26,24 @@
 
 set -euo pipefail
 
-NAME="${1:-}"
-LOCATION="${2:-}"
-DESC="${3:-}"
+ASSET_TYPE="skill"
+ARGS=()
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --reference) ASSET_TYPE="reference"; shift ;;
+    *) ARGS+=("$1"); shift ;;
+  esac
+done
+
+NAME="${ARGS[0]:-}"
+LOCATION="${ARGS[1]:-}"
+DESC="${ARGS[2]:-}"
 
 if [[ -z "$NAME" || -z "$LOCATION" ]]; then
-  echo "usage: $0 <skill-name> <location> [description]" >&2
+  echo "usage: $0 [--reference] <skill-name> <location> [description]" >&2
   echo "  e.g. $0 code-review content/harness/plugins/backend/skills" >&2
+  echo "  e.g. $0 --reference db-transaction content/harness/plugins/base/role-templates/backend/skills" >&2
   exit 1
 fi
 
@@ -44,23 +60,36 @@ if [[ -e "$TARGET" ]]; then
   echo "" >&2
   echo "기존 SKILL 에 scaffold heredoc 갱신을 동기화하려면:" >&2
   echo "  bash $(dirname "$0")/sync-skill.sh \"$TARGET\" --apply" >&2
-  echo "(보편 슬롯만 — 보안 §, rules/checklist SSOT docstring. 조건부 슬롯은 promote-docs/rules.md §체크리스트 참조)" >&2
   exit 2
 fi
 
-mkdir -p "$TARGET/examples" "$TARGET/scripts"
+# reference 자산은 examples/ + scripts/ 안 만듦 (OQ-A: 면제)
+if [[ "$ASSET_TYPE" == "reference" ]]; then
+  mkdir -p "$TARGET"
+else
+  mkdir -p "$TARGET/examples" "$TARGET/scripts"
+fi
 
 # Title from name (kebab → Title Case)
 TITLE=$(echo "$NAME" | tr '-' ' ' \
   | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) substr($i,2)}1')
+
+# Frontmatter — asset_type / allowed_tools 분기
+if [[ "$ASSET_TYPE" == "reference" ]]; then
+  ALLOWED_TOOLS="[Read]"
+  ASSET_TYPE_LINE="asset_type: reference"$'\n'
+else
+  ALLOWED_TOOLS="[Read, Edit, Bash]"
+  ASSET_TYPE_LINE=""
+fi
 
 # SKILL.md
 cat > "$TARGET/SKILL.md" <<EOF
 ---
 name: $NAME
 description: $DESC
-allowed_tools: [Read, Edit, Bash]
----
+allowed_tools: $ALLOWED_TOOLS
+${ASSET_TYPE_LINE}---
 
 # $TITLE
 
@@ -98,7 +127,7 @@ allowed_tools: [Read, Edit, Bash]
 - 위 패턴 매치 시: 입력 거부 (read 단계) + 출력 발견 시 \`***\` 치환. 사용처 환경별 추가 패턴은 본 § 에 보강.
 EOF
 
-# rules.md
+# rules.md (reference 자산도 생성 — 룰·개념 박는 곳)
 cat > "$TARGET/rules.md" <<EOF
 # $TITLE Rules
 
@@ -118,8 +147,10 @@ cat > "$TARGET/rules.md" <<EOF
 - (금지 사항 2)
 EOF
 
-# checklist.md
-cat > "$TARGET/checklist.md" <<EOF
+# reference 자산은 checklist.md / examples/ 안 만듦 (ADR-0015 OQ-A: 면제)
+if [[ "$ASSET_TYPE" != "reference" ]]; then
+  # checklist.md
+  cat > "$TARGET/checklist.md" <<EOF
 # $TITLE Checklist
 
 > 운영 체크리스트 — *어떤 순서로 무엇을 점검·실행·검증하는가* (SSOT).
@@ -139,9 +170,8 @@ cat > "$TARGET/checklist.md" <<EOF
 - [ ] (검증 단계)
 EOF
 
-# examples/sample-no-reference.md (fallback / role-generic 케이스)
-# reference 로드 SKILL 은 sample-with-reference.md 를 별도로 박을 것 — promote-docs/rules.md §체크리스트 §A.
-cat > "$TARGET/examples/sample-no-reference.md" <<EOF
+  # examples/sample-no-reference.md (fallback / role-generic 케이스)
+  cat > "$TARGET/examples/sample-no-reference.md" <<EOF
 # Example: $TITLE — fallback (no reference)
 
 > 사용 예 — 실제 결과물 sample.
@@ -160,5 +190,6 @@ cat > "$TARGET/examples/sample-no-reference.md" <<EOF
 (예시 출력)
 \`\`\`
 EOF
+fi
 
 echo "$TARGET"

@@ -2,7 +2,7 @@
 
 > 자동 생성. 수동 편집 금지. 재생성: `.claude/skills/docs-validate/scripts/validate.sh` (또는 docs/ 편집 시 자동 훅).
 
-_15 spec(s), 7 idea(s), 14 adr(s), 1 unpromoted_
+_16 spec(s), 9 idea(s), 15 adr(s), 2 unpromoted_
 
 ## Relations
 
@@ -51,6 +51,7 @@ _(없음)_
 - [adr-0005-version-rollout](adr/adr-0005-version-rollout.md) ↔ [adr-0006-onboarding-skill](adr/adr-0006-onboarding-skill.md)
 - [adr-0005-version-rollout](adr/adr-0005-version-rollout.md) ↔ [adr-0014-single-plugin-scaffolder](adr/adr-0014-single-plugin-scaffolder.md)
 - [adr-0007-skill-authoring-rules](adr/adr-0007-skill-authoring-rules.md) ↔ [adr-0009-harness-hooks](adr/adr-0009-harness-hooks.md)
+- [adr-0007-skill-authoring-rules](adr/adr-0007-skill-authoring-rules.md) ↔ [adr-0015-reference-asset-marker](adr/adr-0015-reference-asset-marker.md)
 - [adr-0008-medi-docs-scaffold](adr/adr-0008-medi-docs-scaffold.md) ↔ [adr-0014-single-plugin-scaffolder](adr/adr-0014-single-plugin-scaffolder.md)
 - [adr-0008-medi-docs-scaffold](adr/adr-0008-medi-docs-scaffold.md) ↔ [idea-07-adr-content-propagation](idea/idea-07-adr-content-propagation.md)
 - [adr-0008-medi-docs-scaffold](adr/adr-0008-medi-docs-scaffold.md) ↔ [spec-11-medi-docs-frontmatter](spec/spec-11-medi-docs-frontmatter.md)
@@ -65,10 +66,12 @@ _(없음)_
 - [adr-0010-harness-mcp](adr/adr-0010-harness-mcp.md) ↔ [spec-15-harness-mcp](spec/spec-15-harness-mcp.md)
 - [adr-0011-base-hoisting](adr/adr-0011-base-hoisting.md) ↔ [adr-0012-promote-skills](adr/adr-0012-promote-skills.md)
 - [adr-0011-base-hoisting](adr/adr-0011-base-hoisting.md) ↔ [adr-0014-single-plugin-scaffolder](adr/adr-0014-single-plugin-scaffolder.md)
+- [adr-0011-base-hoisting](adr/adr-0011-base-hoisting.md) ↔ [adr-0015-reference-asset-marker](adr/adr-0015-reference-asset-marker.md)
 - [adr-0011-base-hoisting](adr/adr-0011-base-hoisting.md) ↔ [spec-06-base-hoisting](spec/spec-06-base-hoisting.md)
 - [adr-0012-promote-skills](adr/adr-0012-promote-skills.md) ↔ [idea-07-adr-content-propagation](idea/idea-07-adr-content-propagation.md)
 - [adr-0012-promote-skills](adr/adr-0012-promote-skills.md) ↔ [spec-05-promote-skills](spec/spec-05-promote-skills.md)
 - [adr-0013-hook-precedence](adr/adr-0013-hook-precedence.md) ↔ [spec-08-hook-precedence](spec/spec-08-hook-precedence.md)
+- [adr-0014-single-plugin-scaffolder](adr/adr-0014-single-plugin-scaffolder.md) ↔ [adr-0015-reference-asset-marker](adr/adr-0015-reference-asset-marker.md)
 - [idea-01-distribution-strategy](idea/idea-01-distribution-strategy.md) ↔ [idea-02-mediness-architecture](idea/idea-02-mediness-architecture.md)
 - [idea-02-mediness-architecture](idea/idea-02-mediness-architecture.md) ↔ [idea-03-user-docs-scaffold](idea/idea-03-user-docs-scaffold.md)
 - [spec-01-content-pipeline](spec/spec-01-content-pipeline.md) ↔ [spec-05-promote-skills](spec/spec-05-promote-skills.md)
@@ -106,6 +109,7 @@ _(없음)_
 | onboarding-skill | accepted | [spec-07-onboarding-skill](spec/spec-07-onboarding-skill.md) | [idea-01-distribution-strategy](idea/idea-01-distribution-strategy.md) | 사용자(신입·기존)의 mediness plugin 셋업·역할 변경·동기화·정리를 처리하는 단일 대화형 스킬 (`harness`). 메인테이너용 단계 간 승격 스킬(spec-05)과는 다른 도구. |
 | permissions-flow | accepted | [spec-04-permissions-flow](spec/spec-04-permissions-flow.md) | [idea-02-mediness-architecture](idea/idea-02-mediness-architecture.md) | 단계별 쓰기 권한과 외부 노출 표면(inbox PR 입구, harness plugin 출구). hook 실행 순서는 spec-08 참고. |
 | promote-skills | accepted | [spec-05-promote-skills](spec/spec-05-promote-skills.md) | [idea-02-mediness-architecture](idea/idea-02-mediness-architecture.md) | 단계 간 승격을 처리하는 스킬·스크립트 (idea→spec, spec→adr 등). 사용자 온보딩 스킬은 별개. |
+| reference-asset-marker | draft | [spec-16-reference-asset-marker](spec/spec-16-reference-asset-marker.md) | [idea-09-reference-asset-pipeline](idea/idea-09-reference-asset-pipeline.md) | `reference 자산` (절차 SKILL 이 아닌 개념·룰·근거 묶음) 을 5단 파이프라인 + plugin role manifest 에서 *마커 1줄* 로 처리하는 룰셋. `skills/<name>/SKILL.md` frontmatter `asset_type` 필드 + 5개 도구 분기 (sh / validate / manifest sync) 를 포괄. |
 | skill-authoring-rules | accepted | [spec-13-skill-authoring-rules](spec/spec-13-skill-authoring-rules.md) | [idea-04-skill-authoring-rules](idea/idea-04-skill-authoring-rules.md) | 모든 SKILL.md (메인테이너 도구 `.claude/skills/*` + 사용자 배포본 `content/harness/plugins/*/skills/*`) 의 frontmatter 스키마 + 본문 규칙 + 보안 정책 + 검증 룰셋. 작성 형식·검증 룰은 두 영역 동일, **권한 강도만 차등** (메인테이너용은 신뢰 기반으로 `allow_commands` 자유, 사용자 배포본은 엄격). 메타·콘텐츠 docs (`docs/idea`, `docs/spec`, `docs/adr`) 의 frontmatter 는 [[spec-03-frontmatter-naming]] 가 다룸 — 검증 대상이 다름. |
 | version-rollout | accepted | [spec-09-version-rollout](spec/spec-09-version-rollout.md) | [idea-01-distribution-strategy](idea/idea-01-distribution-strategy.md) | plugin 버전 갱신·릴리즈·롤백 정책. autoUpdate 운영 + 단계 release(CI → dogfood → release → 문제 시 force update). 호환성 매트릭스는 운영 X. |
 
@@ -120,6 +124,8 @@ _(없음)_
 | [idea-05-harness-hooks](idea/idea-05-harness-hooks.md) | absorbed | [spec-14-harness-hooks](spec/spec-14-harness-hooks.md) |
 | [idea-06-harness-mcp](idea/idea-06-harness-mcp.md) | absorbed | [spec-15-harness-mcp](spec/spec-15-harness-mcp.md) |
 | [idea-07-adr-content-propagation](idea/idea-07-adr-content-propagation.md) | rejected | _(unpromoted)_ |
+| [idea-08-backend-design-and-verify-skills](idea/idea-08-backend-design-and-verify-skills.md) | rejected | _(unpromoted)_ |
+| [idea-09-reference-asset-pipeline](idea/idea-09-reference-asset-pipeline.md) | open | [spec-16-reference-asset-marker](spec/spec-16-reference-asset-marker.md) |
 
 ## ADRs
 
@@ -139,3 +145,4 @@ _(없음)_
 | accepted | 2026-04-29 | [adr-0012-promote-skills](adr/adr-0012-promote-skills.md) | [spec-05-promote-skills](spec/spec-05-promote-skills.md) |
 | accepted | 2026-04-29 | [adr-0013-hook-precedence](adr/adr-0013-hook-precedence.md) | [spec-08-hook-precedence](spec/spec-08-hook-precedence.md) |
 | accepted | 2026-04-30 | [adr-0014-single-plugin-scaffolder](adr/adr-0014-single-plugin-scaffolder.md) | [spec-02-directory-structure](spec/spec-02-directory-structure.md), [spec-09-version-rollout](spec/spec-09-version-rollout.md) |
+| proposed | 2026-05-03 | [adr-0015-reference-asset-marker](adr/adr-0015-reference-asset-marker.md) | [spec-16-reference-asset-marker](spec/spec-16-reference-asset-marker.md) |
